@@ -1,0 +1,27 @@
+<ul class="nav navbar-nav">
+  <li><a href="/">Home</a></li>
+  <% if (currentUser) { %>
+    <li><a href="private">Private</a></li>
+  <% } %>
+  <li><a href="about">About</a></li>
+</ul>
+<% if (currentUser) { %>
+  <ul class="nav navbar-nav pull-right">
+    <li><a href="exit">Exit</a></li>
+  </ul>
+  <form class="navbar-form navbar-right">
+    <div class="form-group">
+      <p class="form-control-static"><%= currentUser %></p>
+    </div>
+  </form>
+<% } else { %>
+  <ul class="nav navbar-nav pull-right">
+    <li><a href="enter">Enter</a></li>
+  </ul>
+  <form class="navbar-form navbar-right">
+    <div class="form-group">
+      <input type="text" placeholder="login" class="form-control">
+      <input type="text" placeholder="password" class="form-control">
+    </div>
+  </form>
+<% } %>
