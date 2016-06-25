@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-var debug = require('debug')('www'); // DEBUG=www node ./bin/www
+var debug = require('debug')('app:www'); // DEBUG=app:www node ./bin/www
 debug("Starting");
 
 var app = require('../serv');

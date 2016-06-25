@@ -1,3 +1,4 @@
+var debug = require('debug')('app:serv');
 var express = require('express');
 var path = require('path');
 var logger = require('morgan');
@@ -13,16 +14,19 @@ if (process.env.DEBUG) {
     mongoose.set('debug', true);
 }
 mongoose.connection.on('error', function (err) {
-    console.log('Mongo connection ERR:', err);
+    console.error('Mongo connection ERR', err);
     process.exit();
 });
 mongoose.connection.once('open', function () {
-    console.log('Mongo connection OK');
+    debug('Mongo connection OK');
 });
 // options.server.socketOptions = options.replset.socketOptions = { keepAlive: 120 };
 mongoose.connect('mongodb://localhost/testdb');
 
 var app = express();
+
+// Security setup
+app.disable('x-powered-by');
 
 // View engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -56,7 +60,7 @@ var Visitor = require('./models/Visitor.js');
 // Routers
 // var routes = require('./routes/index');
 
-function loadVisitor(req, res, next) {
+function loadVisitor(req, res, next) { // Error handling
   if (req.session.user_id) {
     Visitor.findById(req.session.user_id, function(user) {
       if (user) {
