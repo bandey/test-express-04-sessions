@@ -1,3 +1,4 @@
+var conf = require('./config/config.js');
 var debug = require('debug')('app:serv');
 var express = require('express');
 var path = require('path');
@@ -10,7 +11,7 @@ var session = require('express-session'); // SESSION
 
 // DB connect
 var mongoose = require('mongoose');
-if (process.env.DEBUG) {
+if (conf.get('dbDebug')) {
     mongoose.set('debug', true);
 }
 mongoose.connection.on('error', function (err) {
@@ -21,7 +22,7 @@ mongoose.connection.once('open', function () {
     debug('Mongo connection OK');
 });
 // options.server.socketOptions = options.replset.socketOptions = { keepAlive: 120 };
-mongoose.connect('mongodb://localhost/testdb');
+mongoose.connect(conf.get('dbConnect'));
 
 var app = express();
 
@@ -34,7 +35,9 @@ app.set('view engine', 'ejs');
 app.set('layout', 'layout'); // defaults to 'layout'
 
 // Middlewares
-app.use(logger('dev'));
+if (conf.get('log') !== 'none') {
+    app.use(logger(conf.get('log')));
+}
 app.use(favicon(__dirname + '/public/favicon.png')); // uncomment after placing your favicon in /public
 app.use(session({
     name: 'session_id',
@@ -55,7 +58,7 @@ var pageTitle = 'Sessions Test';
 var currentUser = '';
 
 // Models
-var Visitor = require('./models/Visitor.js');
+// var Visitor = require('./models/Visitor.js');
 
 // Routers
 // var routes = require('./routes/index');
@@ -149,7 +152,7 @@ app.use(function (req, res, next) {
 
 // development error handler
 // will print stacktrace
-if (app.get('env') === 'development') {
+if (conf.get('env') === 'development') {
     app.use(function (err, req, res, next) {
         res.status(err.status || 500);
         res.render('error', {
