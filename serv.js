@@ -12,14 +12,14 @@ var session = require('express-session'); // SESSION
 // DB connect
 var mongoose = require('mongoose');
 if (conf.get('dbDebug')) {
-    mongoose.set('debug', true);
+  mongoose.set('debug', true);
 }
 mongoose.connection.on('error', function (err) {
-    console.error('Mongo connection ERR', err);
-    process.exit();
+  console.error('Mongo connection ERR', err);
+  process.exit();
 });
 mongoose.connection.once('open', function () {
-    debug('Mongo connection OK');
+  debug('Mongo connection OK');
 });
 // options.server.socketOptions = options.replset.socketOptions = { keepAlive: 120 };
 mongoose.connect(conf.get('dbConnect'));
@@ -36,32 +36,76 @@ app.set('layout', 'layout'); // defaults to 'layout'
 
 // Middlewares
 if (conf.get('log') !== 'none') {
-    app.use(logger(conf.get('log')));
+  app.use(logger(conf.get('log')));
 }
 app.use(favicon(__dirname + '/public/favicon.png')); // uncomment after placing your favicon in /public
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
-    name: 'session_id',
-    // cookie: { secure: true, maxAge: 60000 },
-    secret: 'secretkey',
-    rolling: false,
-    resave: false, 
-    saveUninitialized: false
+  name: 'session_id',
+  // cookie: { secure: true, maxAge: 60000 },
+  secret: 'secretkey',
+  rolling: false,
+  resave: false, 
+  saveUninitialized: false
 })); // SESSION
 // app.use(cookieParser());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, 'public')));
+// app.use(bodyParser.json());
 app.use(expressLayouts);
 
-// Page variables
-var pageTitle = 'Sessions Test';
-var currentUser = '';
+// Params for EJS templates
+var viewParams = { 
+  title: 'Sessions Test',
+  msgText: '',
+  msgStyle: '',
+  currentUser: ''
+};
 
 // Models
-// var Visitor = require('./models/Visitor.js');
+var Visitor = require('./models/Visitor.js');
 
 // Routers
 // var routes = require('./routes/index');
+
+app.get('/', function (req, res) {
+  res.render('pages/home.ejs', viewParams);
+});
+
+app.get('/about', function (req, res) {
+  res.render('pages/about.ejs', viewParams);
+});
+
+app.post('/register', bodyParser.urlencoded({ extended: false }), function (req, res, next) {
+  // console.log(req.get('Content-Type'));
+  // console.log(req.body);
+  var visitor = new Visitor({ email: req.body.login, password: req.body.passw });
+  visitor.save(function (err) {
+    if (err) {
+      // console.error(err);
+      if (err.name === 'ValidationError') {
+        console.log(String(err));
+        res.render('pages/blank.ejs', Object.assign({}, viewParams, { 
+          msgText: 'Wrong email or password', 
+          msgStyle: 'danger'
+        }));
+      } else if ((err.name === 'MongoError') && ((err.code === 11000) || (err.code === 11001))) {
+        console.log(String(err));
+        res.render('pages/blank.ejs', Object.assign({}, viewParams, { 
+          msgText: 'User with this email already exists', 
+          msgStyle: 'danger'
+        }));
+      } else {
+        next(new Error('Can not save data to DB'));
+      }
+    } else {
+      console.log('New document saved');
+      res.render('pages/blank.ejs', Object.assign({}, viewParams, { 
+        msgText: 'Registration done', 
+        msgStyle: 'success'
+      }));
+    }
+  });
+});
+
 
 function loadVisitor(req, res, next) { // Error handling
   if (req.session.user_id) {
@@ -90,7 +134,7 @@ var sess; // SESSION
 // app.use('/', routes);
 // app.use('/articles', articles);
 // app.get('/', loadVisitor, function (req, res) {
-app.get('/', function (req, res) {
+app.get('/main', function (req, res) {
     // sess = req.session; // SESSION
     // if (sess.email) {
         // res.redirect('/admin');
@@ -103,18 +147,14 @@ app.get('/private', function (req, res) {
     res.render('pages/private.ejs', { title: pageTitle, currentUser: currentUser });
 });
 
-app.get('/about', function (req, res) {
-    res.render('pages/about.ejs', { title: pageTitle, currentUser: currentUser });
-});
-
-
-app.post('/login', function (req,res) {
-    sess = req.session;
+app.post('/login', function (req, res) {
+    // sess = req.session;
     // In this we are assigning email to sess.email variable.
     // email comes from HTML page.
-    sess.email = req.body.email;
-    console.log('LOGIN: ' + req.body.email + ' + ' + req.body.pass);
-    res.end('done');
+    // sess.email = req.body.email;
+    // console.log('LOGIN: ' + req.body.email + ' + ' + req.body.pass);
+    // res.end('done');
+    res.render('pages/private.ejs', { title: pageTitle, currentUser: currentUser });
 });
 
 app.get('/admin', function (req,res) {
@@ -141,11 +181,12 @@ app.get('/logout', function (req,res) {
     });
 });
 
+
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
-    var err = new Error('Not Found');
-    err.status = 404;
-    next(err);
+  var err = new Error('Not Found');
+  err.status = 404;
+  next(err);
 });
 
 // error handlers
@@ -153,23 +194,29 @@ app.use(function (req, res, next) {
 // development error handler
 // will print stacktrace
 if (conf.get('env') === 'development') {
-    app.use(function (err, req, res, next) {
-        res.status(err.status || 500);
-        res.render('error', {
-            message: err.message,
-            error: err
-        });
+  app.use(function (err, req, res, next) {
+    console.error(err);
+    res.status(err.status || 500);
+    res.render('error', {
+      layout: 'layout_err',
+      title: viewParams.title,
+      message: err.message,
+      error: err
     });
+  });
 }
 
 // production error handler
 // no stacktraces leaked to user
 app.use(function (err, req, res, next) {
-    res.status(err.status || 500);
-    res.render('error', {
-        message: err.message,
-        error: {}
-    });
+  console.error(err);
+  res.status(err.status || 500);
+  res.render('error', {
+    layout: 'layout_err',
+    title: viewParams.title,
+    message: err.message,
+    error: {}
+  });
 });
 
 module.exports = app;

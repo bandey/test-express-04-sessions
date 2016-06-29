@@ -7,11 +7,24 @@ var mongoose = require('mongoose');
 var bcrypt = require('bcryptjs');
 
 var VisitorSchema = new mongoose.Schema({
-  email: { type: String, required: true, maxlength: 50, index: { unique: true } },
-  password: { type: String, required: true, maxlength: 60 }
+  email: { 
+  	type: String, 
+  	required: true, 
+  	minlength: 6, 
+  	maxlength: 50,
+  	match: /^[0-9a-z\_\.\-]+\@[0-9a-z\_\.\-]+\.[a-z]{2,6}$/i,
+  	index: { unique: true }
+  },
+  password: { 
+  	type: String, 
+  	required: true, 
+  	minlength: 5, 
+  	maxlength: 60,
+  	match: /^[0-9a-zA-Z\/\$\.]+$/
+  }
 });
 
-VisitorSchema.set('autoIndex', false); // чтобы каждый раз не пересоздавало индекс
+// VisitorSchema.set('autoIndex', false); // чтобы каждый раз не пересоздавало индекс
 
 /**
  * Вычисляет хеш пароля

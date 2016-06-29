@@ -16,6 +16,8 @@
 
   <link rel="icon" type="image/png" href="favicon.png" />
 
+  <script src="vendors/jquery/jquery-1.12.2.min.js"></script>
+
 </head>
 
 <body>
@@ -28,8 +30,14 @@
       <%- include('menu') %>
     </div>
 
+    <% if (msgText) { %>
+      <div class="panel panel-<%= msgStyle %>">
+        <div class="panel-heading"><%= msgText %></div>
+      </div>
+    <% } %>
+
     <div class="row">
-      <%= body %>
+      <%- body %>
     </div>
 
     <div class="row">
@@ -37,6 +45,24 @@
     </div>
 
   </div>
+
+  <script>
+    $(document).ready(function () {
+      var menuForm = $('#menu-form');
+
+      $("#menu-a-register").click(function (event) {
+        event.preventDefault();
+        menuForm.attr('action', '/register');
+        menuForm.submit();
+      });
+
+      $("#menu-a-enter").click(function (event) {
+        event.preventDefault();
+        menuForm.attr('action', '/enter');
+        menuForm.submit();
+      });
+    });
+  </script>
 
 </body>
 

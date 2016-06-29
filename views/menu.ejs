@@ -16,12 +16,13 @@
   </form>
 <% } else { %>
   <ul class="nav navbar-nav pull-right">
-    <li><a href="enter">Enter</a></li>
+    <li><a id="menu-a-enter" href="/">Enter</a></li>
+    <li><a id="menu-a-register" href="/">Register</a></li>
   </ul>
-  <form class="navbar-form navbar-right">
+  <form id='menu-form' method='post' action='/login' class="navbar-form navbar-right">
     <div class="form-group">
-      <input type="text" placeholder="login" class="form-control">
-      <input type="text" placeholder="password" class="form-control">
+      <input type="text" name='login' placeholder="email" class="form-control">
+      <input type="text" name='passw' placeholder="password" class="form-control">
     </div>
   </form>
 <% } %>
