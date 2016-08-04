@@ -26,6 +26,12 @@ var conf = convict({
     default: "mongodb://localhost/test",
     arg: "db-connect"
   },
+  dbAutoIndex: { // перепроверять ли наличие индексов таблиц при каждом запуске программы
+    doc: "AutoIndex setting for MongoDB.",
+    format: Boolean,
+    default: false, // true - удобно для development, false - быстрее для production
+    arg: "db-auto-index"
+  },
   dbDebug: {
     doc: "Debug mode for MongoDB.",
     format: Boolean,

@@ -1,13 +1,13 @@
 var conf = require('./config/config.js');
-var debug = require('debug')('app:serv');
+var debug = require('debug')('serv:app');
 var express = require('express');
 var path = require('path');
 var logger = require('morgan');
-var favicon = require('serve-favicon');
 // var cookieParser = require('cookie-parser'); // may result in issues if the secret is not the same as for express-session
 var bodyParser = require('body-parser');
 var expressLayouts = require('express-ejs-layouts');
 var session = require('express-session'); // SESSION
+// var favicon = require('serve-favicon');
 
 // DB connect
 var mongoose = require('mongoose');
@@ -22,7 +22,7 @@ mongoose.connection.once('open', function () {
   debug('Mongo connection OK');
 });
 // options.server.socketOptions = options.replset.socketOptions = { keepAlive: 120 };
-mongoose.connect(conf.get('dbConnect'));
+mongoose.connect(conf.get('dbConnect'), { autoIndex: conf.get('dbAutoIndex') });
 
 var app = express();
 
@@ -38,7 +38,6 @@ app.set('layout', 'layout'); // defaults to 'layout'
 if (conf.get('log') !== 'none') {
   app.use(logger(conf.get('log')));
 }
-app.use(favicon(__dirname + '/public/favicon.png')); // uncomment after placing your favicon in /public
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
   name: 'session_id',
@@ -50,6 +49,7 @@ app.use(session({
 })); // SESSION
 // app.use(cookieParser());
 // app.use(bodyParser.json());
+// app.use(favicon(__dirname + '/public/favicon.png'));
 app.use(expressLayouts);
 
 // Params for EJS templates
@@ -75,20 +75,19 @@ app.get('/about', function (req, res) {
 });
 
 app.post('/register', bodyParser.urlencoded({ extended: false }), function (req, res, next) {
-  // console.log(req.get('Content-Type'));
-  // console.log(req.body);
-  var visitor = new Visitor({ email: req.body.login, password: req.body.passw });
-  visitor.save(function (err) {
+  // debug(req.get('Content-Type'));
+  // debug(req.body);
+  // var visitor = new Visitor({ email: req.body.login, password: req.body.passw });
+  // visitor.registerNew(function (err, data) {
+  Visitor.registerNew({ email: req.body.login, password: req.body.passw }, function (err, visitor) {
     if (err) {
-      // console.error(err);
-      if (err.name === 'ValidationError') {
-        console.log(String(err));
+      debug(String(err));
+      if (err.visitorErr === 'Validation') {
         res.render('pages/blank.ejs', Object.assign({}, viewParams, { 
           msgText: 'Wrong email or password', 
           msgStyle: 'danger'
         }));
-      } else if ((err.name === 'MongoError') && ((err.code === 11000) || (err.code === 11001))) {
-        console.log(String(err));
+      } else if (err.visitorErr === 'Uniqueness') {
         res.render('pages/blank.ejs', Object.assign({}, viewParams, { 
           msgText: 'User with this email already exists', 
           msgStyle: 'danger'
@@ -97,7 +96,7 @@ app.post('/register', bodyParser.urlencoded({ extended: false }), function (req,
         next(new Error('Can not save data to DB'));
       }
     } else {
-      console.log('New document saved');
+      debug('Registered new visitor: ' + visitor.email);
       res.render('pages/blank.ejs', Object.assign({}, viewParams, { 
         msgText: 'Registration done', 
         msgStyle: 'success'
@@ -122,13 +121,56 @@ function loadVisitor(req, res, next) { // Error handling
   }
 }
 
+// Users
+// app.get('/users/new', function(req, res) {
+//   res.render('users/new.jade', {
+//     locals: { user: new User() }
+//   });
+// });
+
+// app.post('/users.:format?', function(req, res) {
+// var user = new User(req.body.user);
+//   function userSaved() {
+//     switch (req.params.format) {
+//       case 'json':
+//         res.send(user.__doc);
+//       break;
+
+//       default:
+//         req.session.user_id = user.id;
+//         res.redirect('/documents');
+//     }
+//   }
+
+//   function userSaveFailed() {
+//     // TODO: Show error messages
+//     res.render('users/new.jade', {
+//       locals: { user: user }
+//     });
+//   }
+
+//   user.save(userSaved, userSaveFailed);
+// });
+
 // Sessions
-app.get('/sessions/new', function(req, res) {
-  res.render('sessions/new.ejs', {
-    // locals: { user: new User() },
-    title: 'Sessions Test'
-  });
-});
+// app.get('/sessions/new', function(req, res) {
+//   res.render('sessions/new.ejs', {
+//     // locals: { user: new User() },
+//     title: 'Sessions Test'
+//   });
+// });
+
+// app.post('/sessions', function(req, res) {
+//   User.find({ email: req.body.user.email }).first(function(user) {
+//     if (user && user.authenticate(req.body.user.password)) {
+//       req.session.user_id = user.id;
+//       res.redirect('/documents');
+//     } else {
+//       // TODO: Show error
+//       res.redirect('/sessions/new');
+//     }
+//   }); 
+// });
 
 var sess; // SESSION
 // app.use('/', routes);
@@ -152,7 +194,7 @@ app.post('/login', function (req, res) {
     // In this we are assigning email to sess.email variable.
     // email comes from HTML page.
     // sess.email = req.body.email;
-    // console.log('LOGIN: ' + req.body.email + ' + ' + req.body.pass);
+    // debug('LOGIN: ' + req.body.email + ' + ' + req.body.pass);
     // res.end('done');
     res.render('pages/private.ejs', { title: pageTitle, currentUser: currentUser });
 });
@@ -174,7 +216,7 @@ app.get('/admin', function (req,res) {
 app.get('/logout', function (req,res) {
     req.session.destroy(function(err) {
         if (err) {
-            console.log(err);
+            debug(err);
         } else {
             res.redirect('/');
         }
