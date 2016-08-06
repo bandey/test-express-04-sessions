@@ -51,7 +51,7 @@ var VisitorSchema = new mongoose.Schema({
 
 /**
  * Метод объекта: асинхронно сохраняет посетителя в БД.
- * @param {Function(err,visitor)} callback - Параметр: ссылка на самого посетителя
+ * @param {Function(err,visitor)} callback - Параметр visitor: ссылка на самого посетителя
  */
 VisitorSchema.methods.trySave = function (callback) {
   var that = this;
@@ -77,7 +77,7 @@ VisitorSchema.methods.trySave = function (callback) {
 /**
  * Метод класса: асинхронно регистрирует нового посетителя.
  * @param {Object} candidate - Параметры посетителя {email,password}
- * @param {Function(err,visitor)} callback - Параметр: ссылка на созданного посетителя
+ * @param {Function(err,visitor)} callback - Параметр visitor: ссылка на созданного посетителя
  */
 VisitorSchema.statics.registerNew = function (candidate, callback) {
   var jaySchema = new JaySchema();
@@ -88,7 +88,7 @@ VisitorSchema.statics.registerNew = function (candidate, callback) {
       err.visitorErr = 'Validation';
       return callback(err);
     } else { 
-      debug('Validation OK');
+      debug('Validation at registration OK');
       Visitor.encryptPassword(candidate.password, function (err, hash) {
         if (err) {
           debug(err);
@@ -104,58 +104,74 @@ VisitorSchema.statics.registerNew = function (candidate, callback) {
 };
 
 /**
- * Метод класса: асинхронно вычисляет хеш пароля.
+ * Метод класса: асинхронно проверяет посетителя.
+ * @param {Object} candidate - Параметры посетителя {email,password}
+ * @param {Function(err,visitor)} callback - Параметр visitor: ссылка на вошедшего посетителя
+ */
+VisitorSchema.statics.checkAuth = function (candidate, callback) {
+  var jaySchema = new JaySchema();
+  jaySchema.validate(candidate, visitorJaySchema, function (errs) {
+    if (errs) { 
+      debug(errs);
+      var err = new Error('ValidationError');
+      err.visitorErr = 'Validation';
+      return callback(err);
+    } else { 
+      debug('Validation at entering OK');
+      Visitor.findOne({ email: candidate.email.toLowerCase() }).exec(function (err, visitor) {
+        if (err) { 
+          debug(err);
+          err.visitorErr = 'Selection';
+          return callback(err);
+        } else { 
+          debug('Found record: ', visitor);
+          if (!visitor) {
+            var err = new Error('WrongEmailError');
+            err.visitorErr = 'WrongEmail';
+            return callback(err);
+          } else {
+            Visitor.checkPassword(candidate.password, visitor.password, function (err, res) {
+              if (err) {
+                debug(err);
+                err.visitorErr = 'Encryption';
+                return callback(err);
+              } else if (!res) {
+                debug('Password is not matched');
+                var err = new Error('WrongPasswError');
+                err.visitorErr = 'WrongPassw';
+                return callback(err);
+              } else {
+                debug('Visitor entered');
+                return callback(null, visitor);
+              }
+            });
+          }
+        }
+      });
+    }
+  });
+};
+
+/**
+ * Метод класса: асинхронно вычисляет хэш пароля.
  * @param {String} password - Пароль, max 72 байта (note that UTF8 encoded characters use up to 4 bytes) 
- * @param {Function(err,hash)} callback - Параметр: хэш пароля длиной 60 символов
+ * @param {Function(err,hash)} callback - Параметр hash: хэш пароля длиной 60 символов
  */
 VisitorSchema.statics.encryptPassword = function (password, callback) {
   return bcrypt.hash(password, 8, callback);
+};
+
+/**
+ * Метод класса: асинхронно проверяет пароль по хэшу.
+ * @param {String} password - Пароль, max 72 байта (note that UTF8 encoded characters use up to 4 bytes) 
+ * @param {String} hash - хэш пароля длиной 60 символов
+ * @param {Function(err,res)} callback - Параметр res: true - верный пароль, false - нет
+ */
+VisitorSchema.statics.checkPassword = function (password, hash, callback) {
+  return bcrypt.compare(password, hash, callback);
 };
 
 // Модель посетителя
 var Visitor = mongoose.model('Visitor', VisitorSchema); //->s
 
 module.exports = Visitor;
-
-// https://www.npmjs.com/package/bcryptjs
-// https://www.npmjs.com/package/mongoose
-// http://mongoosejs.com/docs/validation.html
-// http://mongoosejs.com/docs/api.html#schematype_SchemaType-set
-
-// mongoose.model('User', {
-//   getters: {
-//     id: function() {
-//       return this._id.toHexString();
-//     },
-
-//     password: function() { return this._password; }
-//   },
-
-//   setters: {
-//     password: function(password) {
-//       this._password = password;
-//       this.salt = this.makeSalt();
-//       this.hashed_password = this.encryptPassword(password);
-//     }
-//   },
-
-//   methods: {
-//     authenticate: function(plainText) {
-//       return this.encryptPassword(plainText) === this.hashed_password;
-//     },
-
-//     isValid: function() {
-//       // TODO: Better validation
-//       return this.email && this.email.length > 0 && this.email.length < 255
-//              && this.password && this.password.length > 0 && this.password.length < 255;
-//     },
-
-//     save: function(okFn, failedFn) {
-//       if (this.isValid()) {
-//         this.__super__(okFn);
-//       } else {
-//         failedFn();
-//       }
-//     }
-//   }
-// });

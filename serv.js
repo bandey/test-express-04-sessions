@@ -6,7 +6,7 @@ var logger = require('morgan');
 // var cookieParser = require('cookie-parser'); // may result in issues if the secret is not the same as for express-session
 var bodyParser = require('body-parser');
 var expressLayouts = require('express-ejs-layouts');
-var session = require('express-session'); // SESSION
+var session = require('express-session');
 // var favicon = require('serve-favicon');
 
 // DB connect
@@ -34,24 +34,6 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 app.set('layout', 'layout'); // defaults to 'layout'
 
-// Middlewares
-if (conf.get('log') !== 'none') {
-  app.use(logger(conf.get('log')));
-}
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(session({
-  name: 'session_id',
-  // cookie: { secure: true, maxAge: 60000 },
-  secret: 'secretkey',
-  rolling: false,
-  resave: false, 
-  saveUninitialized: false
-})); // SESSION
-// app.use(cookieParser());
-// app.use(bodyParser.json());
-// app.use(favicon(__dirname + '/public/favicon.png'));
-app.use(expressLayouts);
-
 // Params for EJS templates
 var viewParams = { 
   title: 'Sessions Test',
@@ -60,8 +42,48 @@ var viewParams = {
   currentUser: ''
 };
 
+// Middlewares
+if (conf.get('log') !== 'none') {
+  app.use(logger(conf.get('log')));
+}
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(expressLayouts);
+app.use(session({
+  name: 'session_id',
+  // cookie: { secure: true, maxAge: 60000 },
+  secret: 'secretkey',
+  rolling: false,
+  resave: false, 
+  saveUninitialized: false
+}));
+// app.use(cookieParser());
+// app.use(bodyParser.json());
+// app.use(favicon(__dirname + '/public/favicon.png'));
+
 // Models
 var Visitor = require('./models/Visitor.js');
+
+// Middleware: take visitor_id from session and load visitor from DB 
+function loadVisitor(req, res, next) {
+  // debug('loadVisitor');
+  if (req.session && req.session.visitor_id) {
+    debug('VisitorId: ' + req.session.visitor_id);
+    Visitor.findById(req.session.visitor_id, function (err, visitor) {
+      if (err) {
+        debug(err);
+      } else if (visitor) {
+        req.visitor = visitor; // for next routes handlers
+        viewParams.currentUser = visitor.email; // for EJS templates
+      }
+      return next();
+    });
+  } else {
+    return next();
+  }
+}
+
+// Register loadVisitor before any routes handlers
+app.use(loadVisitor);
 
 // Routers
 // var routes = require('./routes/index');
@@ -74,17 +96,26 @@ app.get('/about', function (req, res) {
   res.render('pages/about.ejs', viewParams);
 });
 
+app.get('/private', function (req, res) {
+  if (req.visitor) { // set by loadVisitor
+    res.render('pages/private.ejs', viewParams);
+  } else {
+    res.render('pages/blank.ejs', Object.assign({}, viewParams, { 
+      msgText: 'Forbidden', 
+      msgStyle: 'danger'
+    }));
+  }
+});
+
 app.post('/register', bodyParser.urlencoded({ extended: false }), function (req, res, next) {
   // debug(req.get('Content-Type'));
   // debug(req.body);
-  // var visitor = new Visitor({ email: req.body.login, password: req.body.passw });
-  // visitor.registerNew(function (err, data) {
   Visitor.registerNew({ email: req.body.login, password: req.body.passw }, function (err, visitor) {
     if (err) {
       debug(String(err));
       if (err.visitorErr === 'Validation') {
         res.render('pages/blank.ejs', Object.assign({}, viewParams, { 
-          msgText: 'Wrong email or password', 
+          msgText: 'Invalid email or password', 
           msgStyle: 'danger'
         }));
       } else if (err.visitorErr === 'Uniqueness') {
@@ -93,125 +124,53 @@ app.post('/register', bodyParser.urlencoded({ extended: false }), function (req,
           msgStyle: 'danger'
         }));
       } else {
-        next(new Error('Can not save data to DB'));
+        return next(new Error('Can not register user'));
       }
     } else {
-      debug('Registered new visitor: ' + visitor.email);
+      debug('Registered new visitor: ' + visitor._id + ' ' + visitor.email);
+      req.session.visitor_id = visitor._id;
+      req.visitor = visitor;
       res.render('pages/blank.ejs', Object.assign({}, viewParams, { 
         msgText: 'Registration done', 
-        msgStyle: 'success'
-      }));
+        msgStyle: 'success',
+        currentUser: visitor.email
+      })); // Can use res.redirect
     }
   });
 });
 
-
-function loadVisitor(req, res, next) { // Error handling
-  if (req.session.user_id) {
-    Visitor.findById(req.session.user_id, function(user) {
-      if (user) {
-        req.currentUser = user;
-        next();
+app.post('/enter', bodyParser.urlencoded({ extended: false }), function (req, res, next) {
+  // debug(req.get('Content-Type'));
+  // debug(req.body);
+  Visitor.checkAuth({ email: req.body.login, password: req.body.passw }, function (err, visitor) {
+    if (err) {
+      debug(String(err));
+      if (err.visitorErr === 'Validation') {
+        res.render('pages/blank.ejs', Object.assign({}, viewParams, { 
+          msgText: 'Incorrect email or password', 
+          msgStyle: 'danger'
+        }));
+      } else if ((err.visitorErr === 'WrongEmail') || (err.visitorErr === 'WrongPassw')) {
+        res.render('pages/blank.ejs', Object.assign({}, viewParams, { 
+          msgText: 'Wrong email or password', 
+          msgStyle: 'danger'
+        }));
       } else {
-        res.redirect('/sessions/new');
+        return next(new Error('Can not check user'));
       }
-    });
-  } else {
-    res.redirect('/sessions/new');
-  }
-}
-
-// Users
-// app.get('/users/new', function(req, res) {
-//   res.render('users/new.jade', {
-//     locals: { user: new User() }
-//   });
-// });
-
-// app.post('/users.:format?', function(req, res) {
-// var user = new User(req.body.user);
-//   function userSaved() {
-//     switch (req.params.format) {
-//       case 'json':
-//         res.send(user.__doc);
-//       break;
-
-//       default:
-//         req.session.user_id = user.id;
-//         res.redirect('/documents');
-//     }
-//   }
-
-//   function userSaveFailed() {
-//     // TODO: Show error messages
-//     res.render('users/new.jade', {
-//       locals: { user: user }
-//     });
-//   }
-
-//   user.save(userSaved, userSaveFailed);
-// });
-
-// Sessions
-// app.get('/sessions/new', function(req, res) {
-//   res.render('sessions/new.ejs', {
-//     // locals: { user: new User() },
-//     title: 'Sessions Test'
-//   });
-// });
-
-// app.post('/sessions', function(req, res) {
-//   User.find({ email: req.body.user.email }).first(function(user) {
-//     if (user && user.authenticate(req.body.user.password)) {
-//       req.session.user_id = user.id;
-//       res.redirect('/documents');
-//     } else {
-//       // TODO: Show error
-//       res.redirect('/sessions/new');
-//     }
-//   }); 
-// });
-
-var sess; // SESSION
-// app.use('/', routes);
-// app.use('/articles', articles);
-// app.get('/', loadVisitor, function (req, res) {
-app.get('/main', function (req, res) {
-    // sess = req.session; // SESSION
-    // if (sess.email) {
-        // res.redirect('/admin');
-    // } else {
-        res.render('pages/home.ejs', { title: pageTitle, currentUser: currentUser });
-    // }
-});
-
-app.get('/private', function (req, res) {
-    res.render('pages/private.ejs', { title: pageTitle, currentUser: currentUser });
-});
-
-app.post('/login', function (req, res) {
-    // sess = req.session;
-    // In this we are assigning email to sess.email variable.
-    // email comes from HTML page.
-    // sess.email = req.body.email;
-    // debug('LOGIN: ' + req.body.email + ' + ' + req.body.pass);
-    // res.end('done');
-    res.render('pages/private.ejs', { title: pageTitle, currentUser: currentUser });
-});
-
-app.get('/admin', function (req,res) {
-    sess = req.session;
-    if (sess.email) {
-        res.write('<h1>Hello '+sess.email+'</h1>');
-        // var visitor = new Visitor({email: 'test@mail.ru', password: '12345'});
-        // visitor.save();
-        // res.write(Visitor.encryptPassword('test'));
-        res.end('<a href="+">Logout</a>');
     } else {
-        res.write('<h1>Please login first.</h1>');
-        res.end('<a href="+">Login</a>');
+      debug('Entered visitor: ' + visitor._id + ' ' + visitor.email);
+      req.session.visitor_id = visitor._id;
+      req.visitor = visitor;
+      res.render('pages/blank.ejs', Object.assign({}, viewParams, { 
+        msgText: 'Entering done', 
+        msgStyle: 'success',
+        currentUser: visitor.email
+      })); // Can use res.redirect
     }
+  });
 });
+
 
 app.get('/logout', function (req,res) {
     req.session.destroy(function(err) {
@@ -228,7 +187,7 @@ app.get('/logout', function (req,res) {
 app.use(function (req, res, next) {
   var err = new Error('Not Found');
   err.status = 404;
-  next(err);
+  return next(err);
 });
 
 // error handlers
