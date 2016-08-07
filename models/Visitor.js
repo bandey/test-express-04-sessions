@@ -91,7 +91,7 @@ VisitorSchema.statics.registerNew = function (candidate, callback) {
       debug('Validation at registration OK');
       Visitor.encryptPassword(candidate.password, function (err, hash) {
         if (err) {
-          debug(err);
+          debug(String(err));
           err.visitorErr = 'Encryption';
           return callback(err);
         } else {
@@ -120,7 +120,7 @@ VisitorSchema.statics.checkAuth = function (candidate, callback) {
       debug('Validation at entering OK');
       Visitor.findOne({ email: candidate.email.toLowerCase() }).exec(function (err, visitor) {
         if (err) { 
-          debug(err);
+          debug(String(err));
           err.visitorErr = 'Selection';
           return callback(err);
         } else { 
@@ -132,7 +132,7 @@ VisitorSchema.statics.checkAuth = function (candidate, callback) {
           } else {
             Visitor.checkPassword(candidate.password, visitor.password, function (err, res) {
               if (err) {
-                debug(err);
+                debug(String(err));
                 err.visitorErr = 'Encryption';
                 return callback(err);
               } else if (!res) {

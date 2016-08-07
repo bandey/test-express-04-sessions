@@ -4,7 +4,7 @@ var express = require('express');
 var path = require('path');
 var logger = require('morgan');
 // var cookieParser = require('cookie-parser'); // may result in issues if the secret is not the same as for express-session
-var bodyParser = require('body-parser');
+// var bodyParser = require('body-parser');
 var expressLayouts = require('express-ejs-layouts');
 var session = require('express-session');
 // var favicon = require('serve-favicon');
@@ -34,14 +34,6 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 app.set('layout', 'layout'); // defaults to 'layout'
 
-// Params for EJS templates
-var viewParams = { 
-  title: 'Sessions Test',
-  msgText: '',
-  msgStyle: '',
-  currentUser: ''
-};
-
 // Middlewares
 if (conf.get('log') !== 'none') {
   app.use(logger(conf.get('log')));
@@ -63,6 +55,20 @@ app.use(session({
 // Models
 var Visitor = require('./models/Visitor.js');
 
+// Middleware: init object var, shared between routes handlers of one request
+function initVar(req, res, next) {
+  // debug('initVar');
+  req.var = { 
+    title: 'Sessions Test', // can be reference to string from internationalisation table
+    visitor: null,
+    msgText: '',
+    msgStyle: ''
+  };
+  return next();
+}
+// Register initVar before other routes handlers
+app.use(initVar);
+
 // Middleware: take visitor_id from session and load visitor from DB 
 function loadVisitor(req, res, next) {
   // debug('loadVisitor');
@@ -70,10 +76,9 @@ function loadVisitor(req, res, next) {
     debug('VisitorId: ' + req.session.visitor_id);
     Visitor.findById(req.session.visitor_id, function (err, visitor) {
       if (err) {
-        debug(err);
+        debug(String(err));
       } else if (visitor) {
-        req.visitor = visitor; // for next routes handlers
-        viewParams.currentUser = visitor.email; // for EJS templates
+        req.var.visitor = visitor; // for next routes handlers
       }
       return next();
     });
@@ -81,105 +86,29 @@ function loadVisitor(req, res, next) {
     return next();
   }
 }
-
-// Register loadVisitor before any routes handlers
+// Register loadVisitor before other routes handlers
 app.use(loadVisitor);
 
 // Routers
-// var routes = require('./routes/index');
+app.use('/auth', require('./routes/auth'));
 
 app.get('/', function (req, res) {
-  res.render('pages/home.ejs', viewParams);
+  res.render('pages/home.ejs', req.var);
 });
 
 app.get('/about', function (req, res) {
-  res.render('pages/about.ejs', viewParams);
+  res.render('pages/about.ejs', req.var);
 });
 
 app.get('/private', function (req, res) {
-  if (req.visitor) { // set by loadVisitor
-    res.render('pages/private.ejs', viewParams);
+  if (req.var && req.var.visitor) { // set by loadVisitor
+    res.render('pages/private.ejs', req.var);
   } else {
-    res.render('pages/blank.ejs', Object.assign({}, viewParams, { 
+    res.render('pages/blank.ejs', Object.assign({}, req.var, { 
       msgText: 'Forbidden', 
       msgStyle: 'danger'
     }));
   }
-});
-
-app.post('/register', bodyParser.urlencoded({ extended: false }), function (req, res, next) {
-  // debug(req.get('Content-Type'));
-  // debug(req.body);
-  Visitor.registerNew({ email: req.body.login, password: req.body.passw }, function (err, visitor) {
-    if (err) {
-      debug(String(err));
-      if (err.visitorErr === 'Validation') {
-        res.render('pages/blank.ejs', Object.assign({}, viewParams, { 
-          msgText: 'Invalid email or password', 
-          msgStyle: 'danger'
-        }));
-      } else if (err.visitorErr === 'Uniqueness') {
-        res.render('pages/blank.ejs', Object.assign({}, viewParams, { 
-          msgText: 'User with this email already exists', 
-          msgStyle: 'danger'
-        }));
-      } else {
-        return next(new Error('Can not register user'));
-      }
-    } else {
-      debug('Registered new visitor: ' + visitor._id + ' ' + visitor.email);
-      req.session.visitor_id = visitor._id;
-      req.visitor = visitor;
-      res.render('pages/blank.ejs', Object.assign({}, viewParams, { 
-        msgText: 'Registration done', 
-        msgStyle: 'success',
-        currentUser: visitor.email
-      })); // Can use res.redirect
-    }
-  });
-});
-
-app.post('/enter', bodyParser.urlencoded({ extended: false }), function (req, res, next) {
-  // debug(req.get('Content-Type'));
-  // debug(req.body);
-  Visitor.checkAuth({ email: req.body.login, password: req.body.passw }, function (err, visitor) {
-    if (err) {
-      debug(String(err));
-      if (err.visitorErr === 'Validation') {
-        res.render('pages/blank.ejs', Object.assign({}, viewParams, { 
-          msgText: 'Incorrect email or password', 
-          msgStyle: 'danger'
-        }));
-      } else if ((err.visitorErr === 'WrongEmail') || (err.visitorErr === 'WrongPassw')) {
-        res.render('pages/blank.ejs', Object.assign({}, viewParams, { 
-          msgText: 'Wrong email or password', 
-          msgStyle: 'danger'
-        }));
-      } else {
-        return next(new Error('Can not check user'));
-      }
-    } else {
-      debug('Entered visitor: ' + visitor._id + ' ' + visitor.email);
-      req.session.visitor_id = visitor._id;
-      req.visitor = visitor;
-      res.render('pages/blank.ejs', Object.assign({}, viewParams, { 
-        msgText: 'Entering done', 
-        msgStyle: 'success',
-        currentUser: visitor.email
-      })); // Can use res.redirect
-    }
-  });
-});
-
-
-app.get('/logout', function (req,res) {
-    req.session.destroy(function(err) {
-        if (err) {
-            debug(err);
-        } else {
-            res.redirect('/');
-        }
-    });
 });
 
 
@@ -200,7 +129,7 @@ if (conf.get('env') === 'development') {
     res.status(err.status || 500);
     res.render('error', {
       layout: 'layout_err',
-      title: viewParams.title,
+      title: (req.var && req.var.title) ? req.var.title : 'Error',
       message: err.message,
       error: err
     });
@@ -214,7 +143,7 @@ app.use(function (err, req, res, next) {
   res.status(err.status || 500);
   res.render('error', {
     layout: 'layout_err',
-    title: viewParams.title,
+    title: (req.var && req.var.title) ? req.var.title : 'Error',
     message: err.message,
     error: {}
   });
