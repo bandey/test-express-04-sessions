@@ -62,7 +62,7 @@ app.use(session({
 var Visitor = require('./models/Visitor.js');
 
 // Middleware: init object var, shared between routes handlers of one request
-function initVar(req, res, next) {
+var initVar = function (req, res, next) {
   // debug('initVar');
   req.var = { 
     title: 'Sessions Test', // can be reference to string from internationalisation table
@@ -76,7 +76,7 @@ function initVar(req, res, next) {
 app.use(initVar);
 
 // Middleware: take visitor_id from session and load visitor from DB 
-function loadVisitor(req, res, next) {
+var loadVisitor = function (req, res, next) {
   // debug('loadVisitor');
   if (req.session && req.session.visitor_id) {
     debug('VisitorId: ' + req.session.visitor_id);
@@ -95,6 +95,19 @@ function loadVisitor(req, res, next) {
 // Register loadVisitor before other routes handlers
 app.use(loadVisitor);
 
+// Middleware: prohibit access without authentification
+var checkAuth = function (req, res, next) {
+  // debug('checkAuth');
+  if (req.var && req.var.visitor) { // set by loadVisitor
+    return next(); // auth OK
+  } else {
+    res.render('pages/blank.ejs', Object.assign({}, req.var, { 
+      msgText: 'Forbidden', 
+      msgStyle: 'danger'
+    }));
+  }
+}
+
 // Routers
 app.use('/auth', require('./routes/auth'));
 
@@ -106,15 +119,9 @@ app.get('/about', function (req, res) {
   res.render('pages/about.ejs', req.var);
 });
 
-app.get('/private', function (req, res) {
-  if (req.var && req.var.visitor) { // set by loadVisitor
-    res.render('pages/private.ejs', req.var);
-  } else {
-    res.render('pages/blank.ejs', Object.assign({}, req.var, { 
-      msgText: 'Forbidden', 
-      msgStyle: 'danger'
-    }));
-  }
+app.get('/private', checkAuth, function (req, res) {
+  // pass checkAuth to protect area from non authentificated visitors
+  res.render('pages/private.ejs', req.var);
 });
 
 
