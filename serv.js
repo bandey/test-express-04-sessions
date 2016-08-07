@@ -7,6 +7,7 @@ var logger = require('morgan');
 // var bodyParser = require('body-parser');
 var expressLayouts = require('express-ejs-layouts');
 var session = require('express-session');
+var MongoStore = require('connect-mongo')(session);
 // var favicon = require('serve-favicon');
 
 // DB connect
@@ -44,6 +45,11 @@ app.use(session({
   name: 'session_id',
   // cookie: { secure: true, maxAge: 60000 },
   secret: 'secretkey',
+  store: new MongoStore({ 
+    mongooseConnection: mongoose.connection,
+    collection: 'visitor_sessions',
+    ttl: 10*60 // automatically remove expired sessions (sec)
+  }),
   rolling: false,
   resave: false, 
   saveUninitialized: false
