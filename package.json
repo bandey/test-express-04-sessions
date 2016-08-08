@@ -1,6 +1,6 @@
 {
   "name": "test_express_04",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Test ExpressJS + Sessions",
   "private": true,
   "main": "serv.js",
@@ -25,6 +25,6 @@
     "morgan": "^1.7.0",
     "serve-favicon": "^2.3.0"
   },
-  "author": "bandey",
-  "license": "ISC"
+  "author": "Dmitrii Kondratev <origbandey@gmail.ru>",
+  "license": "MIT"
 }
