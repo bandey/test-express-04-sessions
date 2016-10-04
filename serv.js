@@ -124,7 +124,8 @@ app.get('/private', checkAuth, function (req, res) {
   res.render('pages/private.ejs', req.var);
 });
 
-app.post('/private', bodyParser.urlencoded({ extended: false }), function (req, res, next) {
+app.post('/private', checkAuth, bodyParser.urlencoded({ extended: false }), function (req, res, next) {
+  // pass checkAuth to protect area from non authentificated visitors
   var inData = req.body.somedata;
   if (typeof inData !== 'string') {
     return next(new Error('Data is not string'));
