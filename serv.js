@@ -4,7 +4,7 @@ var express = require('express');
 var path = require('path');
 var logger = require('morgan');
 // var cookieParser = require('cookie-parser'); // may result in issues if the secret is not the same as for express-session
-// var bodyParser = require('body-parser');
+var bodyParser = require('body-parser');
 var expressLayouts = require('express-ejs-layouts');
 var session = require('express-session');
 var MongoStore = require('connect-mongo')(session);
@@ -122,6 +122,19 @@ app.get('/about', function (req, res) {
 app.get('/private', checkAuth, function (req, res) {
   // pass checkAuth to protect area from non authentificated visitors
   res.render('pages/private.ejs', req.var);
+});
+
+app.post('/private', bodyParser.urlencoded({ extended: false }), function (req, res, next) {
+  var inData = req.body.somedata;
+  if (typeof inData !== 'string') {
+    return next(new Error('Data is not string'));
+  }
+  inData = inData.replace(/\W/g, '');
+
+  res.render('pages/private.ejs', Object.assign({}, req.var, { 
+    msgText: 'Accepted data: ' + inData,
+    msgStyle: 'success'
+  }));
 });
 
 
