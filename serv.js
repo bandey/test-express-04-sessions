@@ -1,14 +1,21 @@
+var express = require('express');
 var conf = require('./config/config.js');
 var debug = require('debug')('serv:app');
-var express = require('express');
-var path = require('path');
 var logger = require('morgan');
+var path = require('path');
 // var cookieParser = require('cookie-parser'); // may result in issues if the secret is not the same as for express-session
 var bodyParser = require('body-parser');
 var expressLayouts = require('express-ejs-layouts');
+// var favicon = require('serve-favicon');
+
 var session = require('express-session');
 var MongoStore = require('connect-mongo')(session);
-// var favicon = require('serve-favicon');
+
+var i18next = require('i18next');
+var i18nMiddleware = require('i18next-express-middleware');
+
+// Models
+var Visitor = require('./models/Visitor.js');
 
 // DB connect
 var mongoose = require('mongoose');
@@ -41,6 +48,7 @@ if (conf.get('log') !== 'none') {
 }
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(expressLayouts);
+
 app.use(session({
   name: 'session_id',
   // cookie: { secure: true, maxAge: 60000 },
@@ -54,18 +62,36 @@ app.use(session({
   resave: false, 
   saveUninitialized: false
 }));
+
 // app.use(cookieParser());
 // app.use(bodyParser.json());
 // app.use(favicon(__dirname + '/public/favicon.png'));
 
-// Models
-var Visitor = require('./models/Visitor.js');
+i18next.use(i18nMiddleware.LanguageDetector).init({
+  whitelist: ['en', 'ru'], // allowed languages
+  detection: { // settings for LanguageDetector
+    order: ['path'], // order and from where user language should be detected
+    lookupFromPathIndex: 0, // index of chunk from path
+  }
+});
+app.use(i18nMiddleware.handle(i18next, {
+  // ignoreRoutes: ["/foo"],
+  removeLngFromUrl: true, // remove language chunk from path for next middlewares
+}), function (req, res, next) { // middleware after i18next
+  debug('Lang: ' + req.language);
+  if (req.language == 'dev') { // allowed language not detected
+    return res.redirect(307, '/ru/');
+  } else {
+    return next();
+  }
+});
 
 // Middleware: init object var, shared between routes handlers of one request
 var initVar = function (req, res, next) {
   // debug('initVar');
   req.var = { 
     title: 'Sessions Test', // can be reference to string from internationalisation table
+    urlPrefix: '/' + req.language,
     visitor: null,
     msgText: '',
     msgStyle: ''
@@ -101,7 +127,7 @@ var checkAuth = function (req, res, next) {
   if (req.var && req.var.visitor) { // set by loadVisitor
     return next(); // auth OK
   } else {
-    res.render('pages/blank.ejs', Object.assign({}, req.var, { 
+    return res.render('pages/blank.ejs', Object.assign({}, req.var, { 
       msgText: 'Forbidden', 
       msgStyle: 'danger'
     }));
@@ -112,16 +138,17 @@ var checkAuth = function (req, res, next) {
 app.use('/auth', require('./routes/auth'));
 
 app.get('/', function (req, res) {
-  res.render('pages/home.ejs', req.var);
+  return res.render('pages/home.ejs', req.var);
 });
 
 app.get('/about', function (req, res) {
-  res.render('pages/about.ejs', req.var);
+  return res.render('pages/about.ejs', req.var);
+  debug('Hello!');
 });
 
 app.get('/private', checkAuth, function (req, res) {
   // pass checkAuth to protect area from non authentificated visitors
-  res.render('pages/private.ejs', req.var);
+  return res.render('pages/private.ejs', req.var);
 });
 
 app.post('/private', checkAuth, bodyParser.urlencoded({ extended: false }), function (req, res, next) {
@@ -132,7 +159,7 @@ app.post('/private', checkAuth, bodyParser.urlencoded({ extended: false }), func
   }
   inData = inData.replace(/\W/g, '');
 
-  res.render('pages/private.ejs', Object.assign({}, req.var, { 
+  return res.render('pages/private.ejs', Object.assign({}, req.var, { 
     msgText: 'Accepted data: ' + inData,
     msgStyle: 'success'
   }));
@@ -154,7 +181,7 @@ if (conf.get('env') === 'development') {
   app.use(function (err, req, res, next) {
     console.error(err);
     res.status(err.status || 500);
-    res.render('error', {
+    return res.render('error', {
       layout: 'layout_err',
       title: (req.var && req.var.title) ? req.var.title : 'Error',
       message: err.message,
@@ -168,7 +195,7 @@ if (conf.get('env') === 'development') {
 app.use(function (err, req, res, next) {
   console.error(err);
   res.status(err.status || 500);
-  res.render('error', {
+  return res.render('error', {
     layout: 'layout_err',
     title: (req.var && req.var.title) ? req.var.title : 'Error',
     message: err.message,

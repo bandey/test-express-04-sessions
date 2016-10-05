@@ -27,6 +27,8 @@
     "express": "^4.13.4",
     "express-ejs-layouts": "^2.1.0",
     "express-session": "^1.13.0",
+    "i18next": "^3.4.3",
+    "i18next-express-middleware": "^1.0.2",
     "jayschema": "^0.3.1",
     "mongoose": "^4.4.10",
     "morgan": "^1.7.0",

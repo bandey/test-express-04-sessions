@@ -14,7 +14,7 @@
 
   <link href="/vendors/bootstrap/css/bootstrap.min.css" rel="stylesheet">
 
-  <link rel="icon" type="image/png" href="/favicon.png" />
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
 
   <script src="/vendors/jquery/jquery-1.12.2.min.js"></script>
 
@@ -52,13 +52,13 @@
 
       $("#menu-a-register").click(function (event) {
         event.preventDefault();
-        menuForm.attr('action', '/auth/register');
+        menuForm.attr('action', '<%- urlPrefix %>/auth/register');
         menuForm.submit();
       });
 
       $("#menu-a-enter").click(function (event) {
         event.preventDefault();
-        menuForm.attr('action', '/auth/enter');
+        menuForm.attr('action', '<%- urlPrefix %>/auth/enter');
         menuForm.submit();
       });
     });

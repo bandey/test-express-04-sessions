@@ -15,12 +15,12 @@ router.post('/register', bodyParser.urlencoded({ extended: false }), function (r
     if (err) {
       debug(String(err));
       if (err.visitorErr === 'Validation') {
-        res.render('pages/blank.ejs', Object.assign({}, req.var, { 
+        return res.render('pages/blank.ejs', Object.assign({}, req.var, { 
           msgText: 'Invalid email or password', 
           msgStyle: 'danger'
         }));
       } else if (err.visitorErr === 'Uniqueness') {
-        res.render('pages/blank.ejs', Object.assign({}, req.var, { 
+        return res.render('pages/blank.ejs', Object.assign({}, req.var, { 
           msgText: 'User with this email already exists', 
           msgStyle: 'danger'
         }));
@@ -31,7 +31,7 @@ router.post('/register', bodyParser.urlencoded({ extended: false }), function (r
       debug('Registered new visitor: ' + visitor._id + ' ' + visitor.email);
       req.session.visitor_id = visitor._id;
       req.var.visitor = visitor;
-      res.render('pages/blank.ejs', Object.assign({}, req.var, { 
+      return res.render('pages/blank.ejs', Object.assign({}, req.var, { 
         msgText: 'Registration done', 
         msgStyle: 'success'
       })); // Can use res.redirect
@@ -46,12 +46,12 @@ router.post('/enter', bodyParser.urlencoded({ extended: false }), function (req,
     if (err) {
       debug(String(err));
       if (err.visitorErr === 'Validation') {
-        res.render('pages/blank.ejs', Object.assign({}, req.var, { 
+        return res.render('pages/blank.ejs', Object.assign({}, req.var, { 
           msgText: 'Incorrect email or password', 
           msgStyle: 'danger'
         }));
       } else if ((err.visitorErr === 'WrongEmail') || (err.visitorErr === 'WrongPassw')) {
-        res.render('pages/blank.ejs', Object.assign({}, req.var, { 
+        return res.render('pages/blank.ejs', Object.assign({}, req.var, { 
           msgText: 'Wrong email or password', 
           msgStyle: 'danger'
         }));
@@ -62,7 +62,7 @@ router.post('/enter', bodyParser.urlencoded({ extended: false }), function (req,
       debug('Entered visitor: ' + visitor._id + ' ' + visitor.email);
       req.session.visitor_id = visitor._id;
       req.var.visitor = visitor;
-      res.render('pages/blank.ejs', Object.assign({}, req.var, { 
+      return res.render('pages/blank.ejs', Object.assign({}, req.var, { 
         msgText: 'Entering done', 
         msgStyle: 'success'
       })); // Can use res.redirect
@@ -77,7 +77,7 @@ router.get('/exit', function (req, res, next) {
       debug(String(err));
       return next(new Error('Can not exit'));
     } else {
-      res.redirect('/');
+      return res.redirect(req.var.urlPrefix + '/');
     }
   });
 });
