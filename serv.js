@@ -70,19 +70,23 @@ app.use(session({
 i18next.use(i18nMiddleware.LanguageDetector).init({
   whitelist: ['en', 'ru'], // allowed languages
   detection: { // settings for LanguageDetector
-    order: ['path'], // order and from where user language should be detected
+    order: ['path', 'header'], // order and from where user language should be detected
     lookupFromPathIndex: 0, // index of chunk from path
   }
 });
 app.use(i18nMiddleware.handle(i18next, {
   // ignoreRoutes: ["/foo"],
   removeLngFromUrl: true, // remove language chunk from path for next middlewares
-}), function (req, res, next) { // middleware after i18next
-  debug('Lang: ' + req.language);
-  if (req.language == 'dev') { // allowed language not detected
-    return res.redirect(307, '/ru/');
-  } else {
-    return next();
+}), function (req, res, next) { // my middleware after i18next
+  debug('Lang: ' + req.language + ' ' + req.i18nextLookupName);
+  if (req.language != 'dev') { // allowed language detected
+    if (req.i18nextLookupName == 'path') { // taken from path => ok
+      return next();
+    } else { // taken from header => redirect
+      return res.redirect(307, '/' + req.language + req.originalUrl);
+    }
+  } else { // allowed language not detected
+    return res.redirect(307, '/en' + req.originalUrl);
   }
 });
 
@@ -92,6 +96,7 @@ var initVar = function (req, res, next) {
   req.var = { 
     title: 'Sessions Test', // can be reference to string from internationalisation table
     urlPrefix: '/' + req.language,
+    urlPath: req.path,
     visitor: null,
     msgText: '',
     msgStyle: ''
