@@ -39,6 +39,10 @@ router.post('/register', bodyParser.urlencoded({ extended: false }), function (r
   });
 });
 
+router.get('/register', function (req, res) {
+  return res.redirect(req.var.urlPrefix + '/');
+});
+
 router.post('/enter', bodyParser.urlencoded({ extended: false }), function (req, res, next) {
   // debug(req.get('Content-Type'));
   // debug(req.body);
@@ -68,6 +72,10 @@ router.post('/enter', bodyParser.urlencoded({ extended: false }), function (req,
       })); // Can use res.redirect
     }
   });
+});
+
+router.get('/enter', function (req, res) {
+  return res.redirect(req.var.urlPrefix + '/');
 });
 
 router.get('/exit', function (req, res, next) {
