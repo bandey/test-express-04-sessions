@@ -17,12 +17,12 @@ router.post('/register', bodyParser.urlencoded({ extended: false }), function (r
     if (err) {
       debug(String(err));
       if (err.visitorErr === 'Validation') {
-        return res.render('pages/blank.ejs', Object.assign({}, req.var, { 
+        return res.render('pages/blank.ejs', Object.assign({}, res.locals, { 
           msgText: i18next.t('auth:InvalidEmailOrPassword'), 
           msgStyle: 'danger'
         }));
       } else if (err.visitorErr === 'Uniqueness') {
-        return res.render('pages/blank.ejs', Object.assign({}, req.var, { 
+        return res.render('pages/blank.ejs', Object.assign({}, res.locals, { 
           msgText: i18next.t('auth:UserWithThisEmailAlreadyExists'), 
           msgStyle: 'danger'
         }));
@@ -32,8 +32,8 @@ router.post('/register', bodyParser.urlencoded({ extended: false }), function (r
     } else {
       debug('Registered new visitor: ' + visitor._id + ' ' + visitor.email);
       req.session.visitor_id = visitor._id;
-      req.var.visitor = visitor;
-      return res.render('pages/blank.ejs', Object.assign({}, req.var, { 
+      res.locals.visitor = visitor;
+      return res.render('pages/blank.ejs', Object.assign({}, res.locals, { 
         msgText: i18next.t('auth:RegistrationDone'), 
         msgStyle: 'success'
       })); // Can use res.redirect
@@ -42,7 +42,7 @@ router.post('/register', bodyParser.urlencoded({ extended: false }), function (r
 });
 
 router.get('/register', function (req, res) {
-  return res.redirect(req.var.urlPrefix + '/');
+  return res.redirect(res.locals.urlPrefix + '/');
 });
 
 router.post('/enter', bodyParser.urlencoded({ extended: false }), function (req, res, next) {
@@ -52,12 +52,12 @@ router.post('/enter', bodyParser.urlencoded({ extended: false }), function (req,
     if (err) {
       debug(String(err));
       if (err.visitorErr === 'Validation') {
-        return res.render('pages/blank.ejs', Object.assign({}, req.var, { 
+        return res.render('pages/blank.ejs', Object.assign({}, res.locals, { 
           msgText: i18next.t('auth:IncorrectEmailOrPassword'), 
           msgStyle: 'danger'
         }));
       } else if ((err.visitorErr === 'WrongEmail') || (err.visitorErr === 'WrongPassw')) {
-        return res.render('pages/blank.ejs', Object.assign({}, req.var, { 
+        return res.render('pages/blank.ejs', Object.assign({}, res.locals, { 
           msgText: i18next.t('auth:WrongEmailOrPassword'), 
           msgStyle: 'danger'
         }));
@@ -67,8 +67,8 @@ router.post('/enter', bodyParser.urlencoded({ extended: false }), function (req,
     } else {
       debug('Entered visitor: ' + visitor._id + ' ' + visitor.email);
       req.session.visitor_id = visitor._id;
-      req.var.visitor = visitor;
-      return res.render('pages/blank.ejs', Object.assign({}, req.var, { 
+      res.locals.visitor = visitor;
+      return res.render('pages/blank.ejs', Object.assign({}, res.locals, { 
         msgText: i18next.t('auth:EnteringDone'), 
         msgStyle: 'success'
       })); // Can use res.redirect
@@ -77,17 +77,17 @@ router.post('/enter', bodyParser.urlencoded({ extended: false }), function (req,
 });
 
 router.get('/enter', function (req, res) {
-  return res.redirect(req.var.urlPrefix + '/');
+  return res.redirect(res.locals.urlPrefix + '/');
 });
 
 router.get('/exit', function (req, res, next) {
-  req.var.visitor = null;
+  res.locals.visitor = null;
   req.session.destroy(function (err) {
     if (err) {
       debug(String(err));
       return next(new Error('Can not exit'));
     } else {
-      return res.redirect(req.var.urlPrefix + '/');
+      return res.redirect(res.locals.urlPrefix + '/');
     }
   });
 });
