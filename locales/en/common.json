@@ -19,13 +19,6 @@
   "Send": "Send",
   "AcceptedData": "Accepted data",
 
-  "InvalidEmailOrPassword": "Invalid email or password",
-  "UserWithThisEmailAlreadyExists": "User with this email already exists",
-  "RegistrationDone": "Registration done",
-
-  "IncorrectEmailOrPassword": "Incorrect email or password",
-  "WrongEmailOrPassword": "Wrong email or password",
-  "EnteringDone": "Entering done",
-
-  "AccessDenied": "Access denied"
+  "cSheep": "{{count}} sheep",
+  "cSheep_plural": "{{count}} sheeps"
 }

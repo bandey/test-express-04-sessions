@@ -69,12 +69,17 @@ app.use(session({
 // app.use(favicon(__dirname + '/public/favicon.png'));
 
 i18next.use(i18nMiddleware.LanguageDetector).use(i18nFSBackend).init({
-  // debug: true,
+  debug: conf.get('i18nDebug'),
   whitelist: ['en', 'ru'], // allowed languages
   detection: { // settings for LanguageDetector
     order: ['path', 'header'], // order and from where user language should be detected
     lookupFromPathIndex: 0, // index of chunk from path
   },
+  ns: [ // namespaces - separate json files
+    'common',
+    'auth'
+  ],
+  defaultNS: 'common',
   backend: { // settings for FSBackend
     loadPath: './locales/{{lng}}/{{ns}}.json',
     jsonIndent: 2
@@ -145,7 +150,7 @@ var checkAuth = function (req, res, next) {
     return next(); // auth OK
   } else {
     return res.render('pages/blank.ejs', Object.assign({}, req.var, { 
-      msgText: i18next.t('AccessDenied'), 
+      msgText: i18next.t('auth:AccessDenied'), 
       msgStyle: 'danger'
     }));
   }

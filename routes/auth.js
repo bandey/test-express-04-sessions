@@ -18,12 +18,12 @@ router.post('/register', bodyParser.urlencoded({ extended: false }), function (r
       debug(String(err));
       if (err.visitorErr === 'Validation') {
         return res.render('pages/blank.ejs', Object.assign({}, req.var, { 
-          msgText: i18next.t('InvalidEmailOrPassword'), 
+          msgText: i18next.t('auth:InvalidEmailOrPassword'), 
           msgStyle: 'danger'
         }));
       } else if (err.visitorErr === 'Uniqueness') {
         return res.render('pages/blank.ejs', Object.assign({}, req.var, { 
-          msgText: i18next.t('UserWithThisEmailAlreadyExists'), 
+          msgText: i18next.t('auth:UserWithThisEmailAlreadyExists'), 
           msgStyle: 'danger'
         }));
       } else {
@@ -34,7 +34,7 @@ router.post('/register', bodyParser.urlencoded({ extended: false }), function (r
       req.session.visitor_id = visitor._id;
       req.var.visitor = visitor;
       return res.render('pages/blank.ejs', Object.assign({}, req.var, { 
-        msgText: i18next.t('RegistrationDone'), 
+        msgText: i18next.t('auth:RegistrationDone'), 
         msgStyle: 'success'
       })); // Can use res.redirect
     }
@@ -53,12 +53,12 @@ router.post('/enter', bodyParser.urlencoded({ extended: false }), function (req,
       debug(String(err));
       if (err.visitorErr === 'Validation') {
         return res.render('pages/blank.ejs', Object.assign({}, req.var, { 
-          msgText: i18next.t('IncorrectEmailOrPassword'), 
+          msgText: i18next.t('auth:IncorrectEmailOrPassword'), 
           msgStyle: 'danger'
         }));
       } else if ((err.visitorErr === 'WrongEmail') || (err.visitorErr === 'WrongPassw')) {
         return res.render('pages/blank.ejs', Object.assign({}, req.var, { 
-          msgText: i18next.t('WrongEmailOrPassword'), 
+          msgText: i18next.t('auth:WrongEmailOrPassword'), 
           msgStyle: 'danger'
         }));
       } else {
@@ -69,7 +69,7 @@ router.post('/enter', bodyParser.urlencoded({ extended: false }), function (req,
       req.session.visitor_id = visitor._id;
       req.var.visitor = visitor;
       return res.render('pages/blank.ejs', Object.assign({}, req.var, { 
-        msgText: i18next.t('EnteringDone'), 
+        msgText: i18next.t('auth:EnteringDone'), 
         msgStyle: 'success'
       })); // Can use res.redirect
     }

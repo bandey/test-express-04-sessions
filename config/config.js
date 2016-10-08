@@ -37,6 +37,12 @@ var conf = convict({
     format: Boolean,
     default: false,
     arg: "db-debug"
+  },
+  i18nDebug: {
+    doc: "Debug mode for i18next.",
+    format: Boolean,
+    default: false,
+    arg: "i18n-debug"
   }
 });
 
