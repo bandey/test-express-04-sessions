@@ -61,19 +61,17 @@ app.use(session({
 // Models
 var Visitor = require('./models/Visitor.js');
 
-// Middleware: init object var, shared between routes handlers of one request
-var initVar = function (req, res, next) {
-  // debug('initVar');
-  req.var = { 
-    title: 'Sessions Test', // can be reference to string from internationalisation table
-    visitor: null,
-    msgText: '',
-    msgStyle: ''
-  };
+// Middleware: init object res.locals, shared between routes handlers of one request
+var initLocals = function (req, res, next) {
+  // debug('initLocals');
+  res.locals.title = 'Sessions Test';
+  res.locals.visitor = null;
+  res.locals.msgText = '';
+  res.locals.msgStyle = '';
   return next();
 }
-// Register initVar before other routes handlers
-app.use(initVar);
+// Register initLocals before other routes handlers
+app.use(initLocals);
 
 // Middleware: take visitor_id from session and load visitor from DB 
 var loadVisitor = function (req, res, next) {
@@ -84,7 +82,7 @@ var loadVisitor = function (req, res, next) {
       if (err) {
         debug(String(err));
       } else if (visitor) {
-        req.var.visitor = visitor; // for next routes handlers
+        res.locals.visitor = visitor; // for next routes handlers
       }
       return next();
     });
@@ -98,10 +96,10 @@ app.use(loadVisitor);
 // Middleware: prohibit access without authentification
 var checkAuth = function (req, res, next) {
   // debug('checkAuth');
-  if (req.var && req.var.visitor) { // set by loadVisitor
+  if (res.locals && res.locals.visitor) { // set by loadVisitor
     return next(); // auth OK
   } else {
-    res.render('pages/blank.ejs', Object.assign({}, req.var, { 
+    res.render('pages/blank.ejs', Object.assign({}, res.locals, { 
       msgText: 'Forbidden', 
       msgStyle: 'danger'
     }));
@@ -112,16 +110,16 @@ var checkAuth = function (req, res, next) {
 app.use('/auth', require('./routes/auth'));
 
 app.get('/', function (req, res) {
-  res.render('pages/home.ejs', req.var);
+  res.render('pages/home.ejs'); // res.locals passed automaticaly
 });
 
 app.get('/about', function (req, res) {
-  res.render('pages/about.ejs', req.var);
+  res.render('pages/about.ejs'); // res.locals passed automaticaly
 });
 
 app.get('/private', checkAuth, function (req, res) {
   // pass checkAuth to protect area from non authentificated visitors
-  res.render('pages/private.ejs', req.var);
+  res.render('pages/private.ejs'); // res.locals passed automaticaly
 });
 
 app.post('/private', checkAuth, bodyParser.urlencoded({ extended: false }), function (req, res, next) {
@@ -132,7 +130,7 @@ app.post('/private', checkAuth, bodyParser.urlencoded({ extended: false }), func
   }
   inData = inData.replace(/\W/g, '');
 
-  res.render('pages/private.ejs', Object.assign({}, req.var, { 
+  res.render('pages/private.ejs', Object.assign({}, res.locals, { 
     msgText: 'Accepted data: ' + inData,
     msgStyle: 'success'
   }));
@@ -156,7 +154,7 @@ if (conf.get('env') === 'development') {
     res.status(err.status || 500);
     res.render('error', {
       layout: 'layout_err',
-      title: (req.var && req.var.title) ? req.var.title : 'Error',
+      title: (res.locals && res.locals.title) ? res.locals.title : 'Error',
       message: err.message,
       error: err
     });
@@ -170,7 +168,7 @@ app.use(function (err, req, res, next) {
   res.status(err.status || 500);
   res.render('error', {
     layout: 'layout_err',
-    title: (req.var && req.var.title) ? req.var.title : 'Error',
+    title: (res.locals && res.locals.title) ? res.locals.title : 'Error',
     message: err.message,
     error: {}
   });
