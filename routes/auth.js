@@ -5,6 +5,8 @@ var router = express.Router();
 
 var bodyParser = require('body-parser');
 
+var i18next = require('i18next');
+
 var mongoose = require('mongoose');
 var Visitor = require('../models/Visitor.js');
 
@@ -16,12 +18,12 @@ router.post('/register', bodyParser.urlencoded({ extended: false }), function (r
       debug(String(err));
       if (err.visitorErr === 'Validation') {
         return res.render('pages/blank.ejs', Object.assign({}, req.var, { 
-          msgText: 'Invalid email or password', 
+          msgText: i18next.t('InvalidEmailOrPassword'), 
           msgStyle: 'danger'
         }));
       } else if (err.visitorErr === 'Uniqueness') {
         return res.render('pages/blank.ejs', Object.assign({}, req.var, { 
-          msgText: 'User with this email already exists', 
+          msgText: i18next.t('UserWithThisEmailAlreadyExists'), 
           msgStyle: 'danger'
         }));
       } else {
@@ -32,7 +34,7 @@ router.post('/register', bodyParser.urlencoded({ extended: false }), function (r
       req.session.visitor_id = visitor._id;
       req.var.visitor = visitor;
       return res.render('pages/blank.ejs', Object.assign({}, req.var, { 
-        msgText: 'Registration done', 
+        msgText: i18next.t('RegistrationDone'), 
         msgStyle: 'success'
       })); // Can use res.redirect
     }
@@ -51,12 +53,12 @@ router.post('/enter', bodyParser.urlencoded({ extended: false }), function (req,
       debug(String(err));
       if (err.visitorErr === 'Validation') {
         return res.render('pages/blank.ejs', Object.assign({}, req.var, { 
-          msgText: 'Incorrect email or password', 
+          msgText: i18next.t('IncorrectEmailOrPassword'), 
           msgStyle: 'danger'
         }));
       } else if ((err.visitorErr === 'WrongEmail') || (err.visitorErr === 'WrongPassw')) {
         return res.render('pages/blank.ejs', Object.assign({}, req.var, { 
-          msgText: 'Wrong email or password', 
+          msgText: i18next.t('WrongEmailOrPassword'), 
           msgStyle: 'danger'
         }));
       } else {
@@ -67,7 +69,7 @@ router.post('/enter', bodyParser.urlencoded({ extended: false }), function (req,
       req.session.visitor_id = visitor._id;
       req.var.visitor = visitor;
       return res.render('pages/blank.ejs', Object.assign({}, req.var, { 
-        msgText: 'Entering done', 
+        msgText: i18next.t('EnteringDone'), 
         msgStyle: 'success'
       })); // Can use res.redirect
     }

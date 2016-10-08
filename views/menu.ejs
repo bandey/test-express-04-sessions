@@ -1,13 +1,13 @@
 <ul class="nav navbar-nav">
-  <li><a href="<%- urlPrefix %>/">Home</a></li>
+  <li><a href="<%- urlPrefix %>/"><%- t("Home") %></a></li>
   <% if (visitor) { %>
-    <li><a href="<%- urlPrefix %>/private">Private</a></li>
+    <li><a href="<%- urlPrefix %>/private"><%- t("Private") %></a></li>
   <% } %>
-  <li><a href="<%- urlPrefix %>/about">About</a></li>
+  <li><a href="<%- urlPrefix %>/about"><%- t("About") %></a></li>
 </ul>
 <% if (visitor) { %>
   <ul class="nav navbar-nav pull-right">
-    <li><a href="<%- urlPrefix %>/auth/exit">Exit</a></li>
+    <li><a href="<%- urlPrefix %>/auth/exit"><%- t("Exit") %></a></li>
   </ul>
   <form class="navbar-form navbar-right">
     <div class="form-group">
@@ -16,13 +16,13 @@
   </form>
 <% } else { %>
   <ul class="nav navbar-nav pull-right">
-    <li><a id="menu-a-enter" href="/">Enter</a></li>
-    <li><a id="menu-a-register" href="/">Register</a></li>
+    <li><a id="menu-a-enter" href="/"><%- t("Enter") %></a></li>
+    <li><a id="menu-a-register" href="/"><%- t("Register") %></a></li>
   </ul>
   <form id='menu-form' method='post' action='/enter' class="navbar-form navbar-right">
     <div class="form-group">
-      <input type="text" name='login' placeholder="email" class="form-control">
-      <input type="text" name='passw' placeholder="password" class="form-control">
+      <input type="text" name="login" placeholder="<%- t("Email") %>" class="form-control">
+      <input type="text" name="passw" placeholder="<%- t("Password") %>" class="form-control">
     </div>
   </form>
 <% } %>

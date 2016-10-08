@@ -13,6 +13,7 @@ var MongoStore = require('connect-mongo')(session);
 
 var i18next = require('i18next');
 var i18nMiddleware = require('i18next-express-middleware');
+var i18nFSBackend = require('i18next-node-fs-backend');
 
 // Models
 var Visitor = require('./models/Visitor.js');
@@ -67,12 +68,23 @@ app.use(session({
 // app.use(bodyParser.json());
 // app.use(favicon(__dirname + '/public/favicon.png'));
 
-i18next.use(i18nMiddleware.LanguageDetector).init({
+i18next.use(i18nMiddleware.LanguageDetector).use(i18nFSBackend).init({
+  // debug: true,
   whitelist: ['en', 'ru'], // allowed languages
   detection: { // settings for LanguageDetector
     order: ['path', 'header'], // order and from where user language should be detected
     lookupFromPathIndex: 0, // index of chunk from path
+  },
+  backend: { // settings for FSBackend
+    loadPath: './locales/{{lng}}/{{ns}}.json',
+    jsonIndent: 2
+  },
+}, function (err, t) { // callback after init
+  if (err) {
+    debug(String(err));
+    process.exit();
   }
+  debug('i18next init OK');
 });
 app.use(i18nMiddleware.handle(i18next, {
   // ignoreRoutes: ["/foo"],
@@ -94,7 +106,7 @@ app.use(i18nMiddleware.handle(i18next, {
 var initVar = function (req, res, next) {
   // debug('initVar');
   req.var = { 
-    title: 'Sessions Test', // can be reference to string from internationalisation table
+    title: i18next.t('Title'),
     urlPrefix: '/' + req.language,
     urlPath: req.path,
     visitor: null,
@@ -133,7 +145,7 @@ var checkAuth = function (req, res, next) {
     return next(); // auth OK
   } else {
     return res.render('pages/blank.ejs', Object.assign({}, req.var, { 
-      msgText: 'Forbidden', 
+      msgText: i18next.t('AccessDenied'), 
       msgStyle: 'danger'
     }));
   }
@@ -165,7 +177,7 @@ app.post('/private', checkAuth, bodyParser.urlencoded({ extended: false }), func
   inData = inData.replace(/\W/g, '');
 
   return res.render('pages/private.ejs', Object.assign({}, req.var, { 
-    msgText: 'Accepted data: ' + inData,
+    msgText: i18next.t('Accepted data') + ': ' + inData,
     msgStyle: 'success'
   }));
 });

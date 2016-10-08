@@ -1,8 +1,8 @@
-<h2 class="h3">Pravate page!</h2>
+<h2 class="h3"><%- t("PrivatePage") %></h2>
 <form method="post" action="<%- urlPrefix %>/private" class="form-inline">
   <div class="form-group">
-    <label for="somedata">Data:</label>
+    <label for="somedata"><%- t("Data") %>:</label>
     <input type="text" name="somedata" id="somedata" class="form-control">
-    <input type="submit" name="senddata" value="Send" class="btn btn-default">
+    <input type="submit" name="senddata" value="<%- t("Send") %>" class="btn btn-default">
   </div>
 </form>

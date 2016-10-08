@@ -1,0 +1,31 @@
+{
+  "Title": "Test sessions",
+
+  "Home": "Home",
+  "About": "About",
+  "Private": "Private",
+
+  "Email": "email",
+  "Password": "password",
+  "Register": "Register",
+  "Enter": "Enter",
+  "Exit": "Exit",
+
+  "HomePage": "Home page",
+  "AboutPage": "About page",
+  "PrivatePage": "Private page",
+
+  "Data": "Data",
+  "Send": "Send",
+  "AcceptedData": "Accepted data",
+
+  "InvalidEmailOrPassword": "Invalid email or password",
+  "UserWithThisEmailAlreadyExists": "User with this email already exists",
+  "RegistrationDone": "Registration done",
+
+  "IncorrectEmailOrPassword": "Incorrect email or password",
+  "WrongEmailOrPassword": "Wrong email or password",
+  "EnteringDone": "Entering done",
+
+  "AccessDenied": "Access denied"
+}
