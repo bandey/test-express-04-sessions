@@ -11,6 +11,8 @@ var expressLayouts = require('express-ejs-layouts');
 var session = require('express-session');
 var MongoStore = require('connect-mongo')(session);
 
+var csurf = require('csurf'); // protection from CSRF
+
 var i18next = require('i18next');
 var i18nMiddleware = require('i18next-express-middleware');
 var i18nFSBackend = require('i18next-node-fs-backend');
@@ -154,6 +156,9 @@ var checkAuth = function (req, res, next) {
   }
 }
 
+// Middleware: protect from CSRF
+var protectCSRF = csurf(); // default options are optimal - look at npmjs
+
 // Routers
 app.use('/auth', require('./routes/auth'));
 
@@ -165,12 +170,12 @@ app.get('/about', function (req, res) {
   return res.render('pages/about.ejs'); // res.locals passed automaticaly
 });
 
-app.get('/private', checkAuth, function (req, res) {
+app.get('/private', checkAuth, protectCSRF, function (req, res) {
   // pass checkAuth to protect area from non authentificated visitors
-  return res.render('pages/private.ejs'); // res.locals passed automaticaly
+  return res.render('pages/private.ejs', { csrfToken: req.csrfToken() }); // res.locals passed automaticaly
 });
 
-app.post('/private', checkAuth, bodyParser.urlencoded({ extended: false }), function (req, res, next) {
+app.post('/private', checkAuth, bodyParser.urlencoded({ extended: false }), protectCSRF, function (req, res, next) {
   // pass checkAuth to protect area from non authentificated visitors
   var inData = req.body.somedata;
   if (typeof inData !== 'string') {
@@ -178,8 +183,9 @@ app.post('/private', checkAuth, bodyParser.urlencoded({ extended: false }), func
   }
   inData = inData.replace(/\W/g, '');
 
-  return res.render('pages/private.ejs', Object.assign({}, res.locals, { 
-    msgText: i18next.t('Accepted data') + ': ' + inData,
+  return res.render('pages/private.ejs', Object.assign({}, res.locals, {
+    csrfToken: req.csrfToken(),
+    msgText: i18next.t('AcceptedData') + ': ' + inData,
     msgStyle: 'success'
   }));
 });
@@ -190,6 +196,16 @@ app.use(function (req, res, next) {
   var err = new Error('Not Found');
   err.status = 404;
   return next(err);
+});
+
+// handle error thrown by CSRF protection middleware
+app.use(function (err, req, res, next) { // by default it throw 403 with err.code='EBADCSRFTOKEN'
+  if (err.code !== 'EBADCSRFTOKEN') return next(err);
+  // console.error(err);
+  return res.render('pages/blank.ejs', Object.assign({}, res.locals, { 
+    msgText: i18next.t('auth:RequestDenied'), 
+    msgStyle: 'danger'
+  }));
 });
 
 // error handlers

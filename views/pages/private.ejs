@@ -1,5 +1,6 @@
 <h2 class="h3"><%- t("PrivatePage") %></h2>
 <form method="post" action="<%- urlPrefix %>/private" class="form-inline">
+  <input type="hidden" name="_csrf" value="<%- csrfToken %>">
   <div class="form-group">
     <label for="somedata"><%- t("Data") %>:</label>
     <input type="text" name="somedata" id="somedata" class="form-control">
