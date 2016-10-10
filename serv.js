@@ -13,12 +13,11 @@ var MongoStore = require('connect-mongo')(session);
 
 var csurf = require('csurf'); // protection from CSRF
 var hpp = require('hpp'); // protection from HTTP Parameter Pollution attacks
+var helmet = require('helmet'); // controls security HTTP headers
 
 var i18next = require('i18next');
 var i18nMiddleware = require('i18next-express-middleware');
 var i18nFSBackend = require('i18next-node-fs-backend');
-
-var helmet = require('helmet');
 
 // Models
 var Visitor = require('./models/Visitor.js');

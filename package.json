@@ -1,9 +1,15 @@
 {
   "name": "test_express_04",
-  "version": "0.2.0",
-  "description": "Test ExpressJS + Sessions",
+  "version": "0.3.0",
+  "description": "Test ExpressJS + sessions + i18n + some security tools",
   "keywords": [
     "bcrypt",
+    "csrf",
+    "csurf",
+    "helmet",
+    "hpp",
+    "i18n",
+    "i18next",
     "jayschema",
     "session"
   ],
