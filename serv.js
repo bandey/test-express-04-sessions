@@ -18,6 +18,8 @@ var i18next = require('i18next');
 var i18nMiddleware = require('i18next-express-middleware');
 var i18nFSBackend = require('i18next-node-fs-backend');
 
+var helmet = require('helmet');
+
 // Models
 var Visitor = require('./models/Visitor.js');
 
@@ -38,9 +40,6 @@ mongoose.connect(conf.get('dbConnect'), { autoIndex: conf.get('dbAutoIndex') });
 
 var app = express();
 
-// Security setup
-app.disable('x-powered-by');
-
 // View engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -50,6 +49,13 @@ app.set('layout', 'layout'); // defaults to 'layout'
 if (conf.get('log') !== 'none') {
   app.use(logger(conf.get('log')));
 }
+
+// security middleware
+app.use(helmet({
+  frameguard: { action: 'deny' },
+  hsts: false, // hsts works only for https
+}));
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(expressLayouts);
 
