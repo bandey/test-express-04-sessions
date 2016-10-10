@@ -40,6 +40,9 @@ mongoose.connect(conf.get('dbConnect'), { autoIndex: conf.get('dbAutoIndex') });
 
 var app = express();
 
+// Security setup
+app.disable('x-powered-by');
+
 // View engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -49,12 +52,6 @@ app.set('layout', 'layout'); // defaults to 'layout'
 if (conf.get('log') !== 'none') {
   app.use(logger(conf.get('log')));
 }
-
-// security middleware
-app.use(helmet({
-  frameguard: { action: 'deny' },
-  hsts: false, // hsts works only for https
-}));
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(expressLayouts);
@@ -115,6 +112,23 @@ app.use(i18nMiddleware.handle(i18next, {
     return res.redirect(307, '/en' + req.originalUrl);
   }
 });
+
+// security middleware - use it in apropriate place (routes), for example: it is not needed for json api answers
+app.use(helmet({
+  frameguard: { action: 'deny' },
+  hidePoweredBy: false, // it was made by hand at begining
+  hsts: false, // hsts works only for https
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"], // we have inline js in our layout.ejs => Danger!
+      styleSrc: ["'self'", "'unsafe-inline'"], // we have inline styles in our layout.ejs => Danger!
+    },
+    reportOnly: false,
+    setAllHeaders: false,
+    disableAndroid: false,
+  }
+}));
 
 // Middleware: init object res.locals, shared between routes handlers of one request
 var initLocals = function (req, res, next) {
