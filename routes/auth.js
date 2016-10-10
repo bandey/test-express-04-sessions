@@ -5,12 +5,14 @@ var router = express.Router();
 
 var bodyParser = require('body-parser');
 
+var hpp = require('hpp'); // protection from HTTP Parameter Pollution attacks
+
 var i18next = require('i18next');
 
 var mongoose = require('mongoose');
 var Visitor = require('../models/Visitor.js');
 
-router.post('/register', bodyParser.urlencoded({ extended: false }), function (req, res, next) {
+router.post('/register', bodyParser.urlencoded({ extended: false }), hpp(), function (req, res, next) {
   // debug(req.get('Content-Type'));
   // debug(req.body);
   Visitor.registerNew({ email: req.body.login, password: req.body.passw }, function (err, visitor) {
@@ -45,7 +47,7 @@ router.get('/register', function (req, res) {
   return res.redirect(res.locals.urlPrefix + '/');
 });
 
-router.post('/enter', bodyParser.urlencoded({ extended: false }), function (req, res, next) {
+router.post('/enter', bodyParser.urlencoded({ extended: false }), hpp(), function (req, res, next) {
   // debug(req.get('Content-Type'));
   // debug(req.body);
   Visitor.checkAuth({ email: req.body.login, password: req.body.passw }, function (err, visitor) {

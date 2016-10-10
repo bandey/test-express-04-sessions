@@ -12,6 +12,7 @@ var session = require('express-session');
 var MongoStore = require('connect-mongo')(session);
 
 var csurf = require('csurf'); // protection from CSRF
+var hpp = require('hpp'); // protection from HTTP Parameter Pollution attacks
 
 var i18next = require('i18next');
 var i18nMiddleware = require('i18next-express-middleware');
@@ -175,7 +176,7 @@ app.get('/private', checkAuth, protectCSRF, function (req, res) {
   return res.render('pages/private.ejs', { csrfToken: req.csrfToken() }); // res.locals passed automaticaly
 });
 
-app.post('/private', checkAuth, bodyParser.urlencoded({ extended: false }), protectCSRF, function (req, res, next) {
+app.post('/private', checkAuth, bodyParser.urlencoded({ extended: false }), hpp(), protectCSRF, function (req, res, next) {
   // pass checkAuth to protect area from non authentificated visitors
   var inData = req.body.somedata;
   if (typeof inData !== 'string') {
