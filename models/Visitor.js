@@ -9,7 +9,7 @@ var JaySchema = require('jayschema');
 var bcrypt = require('bcryptjs');
 
 // Схема для проверки корректности логина и пароля
-var visitorJaySchema = { 
+var visitorCheckSchema = { 
   "type": "object",
   "properties": {
     "email": {
@@ -75,13 +75,23 @@ VisitorSchema.methods.trySave = function (callback) {
 };
 
 /**
+ * Метод класса: асинхронно проверяет корректность логина и пароля посетителя.
+ * @param {Object} candidate - Параметры посетителя {email,password}
+ * @param {Function(errs)} callback - Параметр errs: массив ошибок или undefined при успехе
+ */
+VisitorSchema.statics.validateCheckSchema = function (candidate, callback) {
+  var jaySchema = new JaySchema();
+  jaySchema.validate(candidate, visitorCheckSchema, callback);
+};
+
+/**
  * Метод класса: асинхронно регистрирует нового посетителя.
  * @param {Object} candidate - Параметры посетителя {email,password}
  * @param {Function(err,visitor)} callback - Параметр visitor: ссылка на созданного посетителя
  */
 VisitorSchema.statics.registerNew = function (candidate, callback) {
-  var jaySchema = new JaySchema();
-  jaySchema.validate(candidate, visitorJaySchema, function (errs) {
+  var that = this;
+  that.validateCheckSchema(candidate, function (errs) {
     if (errs) { 
       debug(errs);
       var err = new Error('ValidationError');
@@ -89,13 +99,13 @@ VisitorSchema.statics.registerNew = function (candidate, callback) {
       return callback(err);
     } else { 
       debug('Validation at registration OK');
-      Visitor.encryptPassword(candidate.password, function (err, hash) {
+      that.encryptPassword(candidate.password, function (err, hash) {
         if (err) {
           debug(String(err));
           err.visitorErr = 'Encryption';
           return callback(err);
         } else {
-          var visitor = new Visitor({ email: candidate.email, password: hash });
+          var visitor = that.createVisitor({ email: candidate.email, password: hash });
           return visitor.trySave(callback);
         }
       });
@@ -109,8 +119,8 @@ VisitorSchema.statics.registerNew = function (candidate, callback) {
  * @param {Function(err,visitor)} callback - Параметр visitor: ссылка на вошедшего посетителя
  */
 VisitorSchema.statics.checkAuth = function (candidate, callback) {
-  var jaySchema = new JaySchema();
-  jaySchema.validate(candidate, visitorJaySchema, function (errs) {
+  var that = this;
+  that.validateCheckSchema(candidate, function (errs) {
     if (errs) { 
       debug(errs);
       var err = new Error('ValidationError');
@@ -118,7 +128,7 @@ VisitorSchema.statics.checkAuth = function (candidate, callback) {
       return callback(err);
     } else { 
       debug('Validation at entering OK');
-      Visitor.findOne({ email: candidate.email.toLowerCase() }).exec(function (err, visitor) {
+      that.findOne({ email: candidate.email.toLowerCase() }).exec(function (err, visitor) {
         if (err) { 
           debug(String(err));
           err.visitorErr = 'Selection';
@@ -130,7 +140,7 @@ VisitorSchema.statics.checkAuth = function (candidate, callback) {
             err.visitorErr = 'WrongEmail';
             return callback(err);
           } else {
-            Visitor.checkPassword(candidate.password, visitor.password, function (err, res) {
+            that.checkPassword(candidate.password, visitor.password, function (err, res) {
               if (err) {
                 debug(String(err));
                 err.visitorErr = 'Encryption';
@@ -169,6 +179,15 @@ VisitorSchema.statics.encryptPassword = function (password, callback) {
  */
 VisitorSchema.statics.checkPassword = function (password, hash, callback) {
   return bcrypt.compare(password, hash, callback);
+};
+
+/**
+ * Метод класса: создает объект класса Visitor
+ * @param {Object} candidate - Параметры посетителя {email,password}
+ * @return {Object} - объект класса Visitor
+ */
+VisitorSchema.statics.createVisitor = function (candidate) {
+  return new Visitor(candidate);
 };
 
 // Модель посетителя
