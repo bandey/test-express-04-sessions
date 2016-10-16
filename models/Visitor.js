@@ -8,26 +8,7 @@ var mongoose = require('mongoose');
 var JaySchema = require('jayschema');
 var bcrypt = require('bcryptjs');
 
-// Схема для проверки корректности логина и пароля
-var visitorCheckSchema = { 
-  "type": "object",
-  "properties": {
-    "email": {
-      "type": "string",
-      "minLength": 6,
-      "maxLength": 50,
-      "format": "email"
-    },
-    password: {
-      "type": "string",
-      "minLength": 5,
-      "maxLength": 50,
-      "pattern": "^[0-9a-zA-Z\-\_]+$"
-    }
-  },
-  "required": ["email", "password"],
-  "additionalProperties": false
-};
+var Visitor;
 
 // Схема посетителя
 var VisitorSchema = new mongoose.Schema({
@@ -49,13 +30,34 @@ var VisitorSchema = new mongoose.Schema({
   }
 });
 
+// Схема для проверки корректности логина и пароля
+var visitorCheckSchema = { 
+  "type": "object",
+  "properties": {
+    "email": {
+      "type": "string",
+      "minLength": 6,
+      "maxLength": 50,
+      "format": "email"
+    },
+    password: {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 50,
+      "pattern": "^[0-9a-zA-Z\-\_]+$"
+    }
+  },
+  "required": ["email", "password"],
+  "additionalProperties": false
+};
+
 /**
  * Метод объекта: асинхронно сохраняет посетителя в БД.
  * @param {Function(err,visitor)} callback - Параметр visitor: ссылка на самого посетителя
  */
 VisitorSchema.methods.trySave = function (callback) {
   var that = this;
-  this.save(function (err) {
+  that.save(function (err) {
     if (err) {
       debug(String(err));
       if (err.name === 'ValidationError') {
@@ -75,6 +77,15 @@ VisitorSchema.methods.trySave = function (callback) {
 };
 
 /**
+ * Метод класса: создает объект класса Visitor
+ * @param {Object} candidate - Параметры посетителя {email,password}
+ * @return {Object} - объект класса Visitor
+ */
+VisitorSchema.statics.createInstance = function (candidate) {
+  return new Visitor(candidate);
+};
+
+/**
  * Метод класса: асинхронно проверяет корректность логина и пароля посетителя.
  * @param {Object} candidate - Параметры посетителя {email,password}
  * @param {Function(errs)} callback - Параметр errs: массив ошибок или undefined при успехе
@@ -82,6 +93,25 @@ VisitorSchema.methods.trySave = function (callback) {
 VisitorSchema.statics.validateCheckSchema = function (candidate, callback) {
   var jaySchema = new JaySchema();
   jaySchema.validate(candidate, visitorCheckSchema, callback);
+};
+
+/**
+ * Метод класса: асинхронно вычисляет хэш пароля.
+ * @param {String} password - Пароль, max 72 байта (note that UTF8 encoded characters use up to 4 bytes) 
+ * @param {Function(err,hash)} callback - Параметр hash: хэш пароля длиной 60 символов
+ */
+VisitorSchema.statics.encryptPassword = function (password, callback) {
+  return bcrypt.hash(password, 8, callback);
+};
+
+/**
+ * Метод класса: асинхронно проверяет пароль по хэшу.
+ * @param {String} password - Пароль, max 72 байта (note that UTF8 encoded characters use up to 4 bytes) 
+ * @param {String} hash - хэш пароля длиной 60 символов
+ * @param {Function(err,res)} callback - Параметр res: true - верный пароль, false - нет
+ */
+VisitorSchema.statics.checkPassword = function (password, hash, callback) {
+  return bcrypt.compare(password, hash, callback);
 };
 
 /**
@@ -105,7 +135,7 @@ VisitorSchema.statics.registerNew = function (candidate, callback) {
           err.visitorErr = 'Encryption';
           return callback(err);
         } else {
-          var visitor = that.createVisitor({ email: candidate.email, password: hash });
+          var visitor = that.createInstance({ email: candidate.email, password: hash });
           return visitor.trySave(callback);
         }
       });
@@ -162,35 +192,7 @@ VisitorSchema.statics.checkAuth = function (candidate, callback) {
   });
 };
 
-/**
- * Метод класса: асинхронно вычисляет хэш пароля.
- * @param {String} password - Пароль, max 72 байта (note that UTF8 encoded characters use up to 4 bytes) 
- * @param {Function(err,hash)} callback - Параметр hash: хэш пароля длиной 60 символов
- */
-VisitorSchema.statics.encryptPassword = function (password, callback) {
-  return bcrypt.hash(password, 8, callback);
-};
-
-/**
- * Метод класса: асинхронно проверяет пароль по хэшу.
- * @param {String} password - Пароль, max 72 байта (note that UTF8 encoded characters use up to 4 bytes) 
- * @param {String} hash - хэш пароля длиной 60 символов
- * @param {Function(err,res)} callback - Параметр res: true - верный пароль, false - нет
- */
-VisitorSchema.statics.checkPassword = function (password, hash, callback) {
-  return bcrypt.compare(password, hash, callback);
-};
-
-/**
- * Метод класса: создает объект класса Visitor
- * @param {Object} candidate - Параметры посетителя {email,password}
- * @return {Object} - объект класса Visitor
- */
-VisitorSchema.statics.createVisitor = function (candidate) {
-  return new Visitor(candidate);
-};
-
 // Модель посетителя
-var Visitor = mongoose.model('Visitor', VisitorSchema); //->s
+Visitor = mongoose.model('Visitor', VisitorSchema); //->s
 
 module.exports = Visitor;
