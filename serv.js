@@ -182,6 +182,10 @@ var protectCSRF = csurf(); // default options are optimal - look at npmjs
 // Routers
 app.use('/auth', require('./routes/auth'));
 
+if (conf.get('ejsTestRouter')) { // Router for EJS templates testing
+  app.use('/ejs', require('./routes/ejs-test'));
+}
+
 app.get('/', function (req, res) {
   return res.render('pages/home.ejs'); // res.locals passed automaticaly
 });

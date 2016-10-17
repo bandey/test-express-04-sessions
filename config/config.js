@@ -43,6 +43,12 @@ var conf = convict({
     format: Boolean,
     default: false,
     arg: "i18n-debug"
+  },
+  ejsTestRouter: {
+    doc: "Router for EJS templates testing.",
+    format: Boolean,
+    default: false,
+    arg: "ejs-test"
   }
 });
 

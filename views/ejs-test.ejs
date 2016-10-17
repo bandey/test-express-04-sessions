@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+
+<html lang='en'>
+
+<head>
+
+  <meta charset="utf-8">
+  <title><%= title %></title>
+
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+
+</head>
+
+<body>
+
+  <% for (var i = 0; i < hrefsList.length; i++) { 
+    if (hrefsList[i]) { %>
+      <a href="<%- urlPrefix %><%- urlPath %>/<%= hrefsList[i] %>"><%= hrefsList[i] %> : <%= pagesList[i] %></a><br>
+    <% } else { %>
+      <br>
+    <% }
+  } %>
+
+</body>
+
+</html>
