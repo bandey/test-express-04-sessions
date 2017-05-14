@@ -132,7 +132,7 @@ app.use(helmet({
 // Middleware: init object res.locals, shared between routes handlers of one request
 var initLocals = function (req, res, next) {
   // debug('initLocals');
-  res.locals.title = i18next.t('Title');
+  res.locals.title = req.t('Title');
   res.locals.urlPrefix = '/' + req.language;
   res.locals.urlPath = req.path;
   res.locals.visitor = null;
@@ -170,7 +170,7 @@ var checkAuth = function (req, res, next) {
     return next(); // auth OK
   } else {
     return res.render('pages/blank.ejs', Object.assign({}, res.locals, { 
-      msgText: i18next.t('auth:AccessDenied'), 
+      msgText: req.t('auth:AccessDenied'), 
       msgStyle: 'danger'
     }));
   }
@@ -209,7 +209,7 @@ app.post('/private', checkAuth, bodyParser.urlencoded({ extended: false }), hpp(
 
   return res.render('pages/private.ejs', Object.assign({}, res.locals, {
     csrfToken: req.csrfToken(),
-    msgText: i18next.t('AcceptedData') + ': ' + inData,
+    msgText: req.t('AcceptedData') + ': ' + inData,
     msgStyle: 'success'
   }));
 });
@@ -227,7 +227,7 @@ app.use(function (err, req, res, next) { // by default it throw 403 with err.cod
   if (err.code !== 'EBADCSRFTOKEN') return next(err);
   // console.error(err);
   return res.render('pages/blank.ejs', Object.assign({}, res.locals, { 
-    msgText: i18next.t('auth:RequestDenied'), 
+    msgText: req.t('auth:RequestDenied'), 
     msgStyle: 'danger'
   }));
 });

@@ -1,7 +1,5 @@
 var debug = require('debug')('routes:auth:enter');
 
-var i18next = require('i18next');
-
 var Visitor = require('../models/Visitor.js');
 
 var authEnter = function (req, res, next) {
@@ -12,12 +10,12 @@ var authEnter = function (req, res, next) {
       debug(String(err));
       if (err.visitorErr === 'Validation') {
         return res.render('pages/blank.ejs', Object.assign({}, res.locals, { 
-          msgText: i18next.t('auth:IncorrectEmailOrPassword'), 
+          msgText: req.t('auth:IncorrectEmailOrPassword'), 
           msgStyle: 'danger'
         }));
       } else if ((err.visitorErr === 'WrongEmail') || (err.visitorErr === 'WrongPassw')) {
         return res.render('pages/blank.ejs', Object.assign({}, res.locals, { 
-          msgText: i18next.t('auth:WrongEmailOrPassword'), 
+          msgText: req.t('auth:WrongEmailOrPassword'), 
           msgStyle: 'danger'
         }));
       } else {
@@ -28,7 +26,7 @@ var authEnter = function (req, res, next) {
       req.session.visitor_id = visitor._id;
       res.locals.visitor = visitor;
       return res.render('pages/blank.ejs', Object.assign({}, res.locals, { 
-        msgText: i18next.t('auth:EnteringDone'), 
+        msgText: req.t('auth:EnteringDone'), 
         msgStyle: 'success'
       })); // Can use res.redirect
     }

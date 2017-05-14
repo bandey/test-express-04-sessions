@@ -13,7 +13,6 @@ var sinon = require('sinon');
 var authEnter = require('../routes/auth-enter.js');
 
 var Visitor = require('../models/Visitor.js');
-var i18next = require('i18next');
 
 test('authEnter', function (t) {
   t.plan(12);
@@ -23,7 +22,14 @@ test('authEnter', function (t) {
       login: 'test@mail.com',
       passw: '12345'
     },
-    session: {}
+
+    session: {},
+
+    t: function (msg) {
+      t.pass('call req.t');
+      t.equal(msg, 'auth:EnteringDone', 'pass EnteringDone')
+      return 'Translate Entering Done';
+    }
   };
 
   var visitor = Visitor.createInstance({ email: req.body.login, password: '666HASH999' });
@@ -54,18 +60,10 @@ test('authEnter', function (t) {
   });
   // sinon.stub was made on global variable - removing is required
 
-  var stubi18t = sinon.stub(i18next, 't', function (msg) {
-    t.pass('call i18next.t');
-    t.equal(msg, 'auth:EnteringDone', 'pass EnteringDone')
-    return 'Translate Entering Done';
-  });
-  // sinon.stub was made on global variable - removing is required
-
   authEnter(req, res, next);
 });
 
 test('teardown', function (t) {
   Visitor.checkAuth.restore(); // remove sinon.stub
-  i18next.t.restore(); // remove sinon.stub
   t.end();
 });

@@ -7,8 +7,6 @@ var bodyParser = require('body-parser');
 
 var hpp = require('hpp'); // protection from HTTP Parameter Pollution attacks
 
-var i18next = require('i18next');
-
 var Visitor = require('../models/Visitor.js');
 
 var authEnter = require('./auth-enter.js');
@@ -21,12 +19,12 @@ router.post('/register', bodyParser.urlencoded({ extended: false }), hpp(), func
       debug(String(err));
       if (err.visitorErr === 'Validation') {
         return res.render('pages/blank.ejs', Object.assign({}, res.locals, { 
-          msgText: i18next.t('auth:InvalidEmailOrPassword'), 
+          msgText: req.t('auth:InvalidEmailOrPassword'), 
           msgStyle: 'danger'
         }));
       } else if (err.visitorErr === 'Uniqueness') {
         return res.render('pages/blank.ejs', Object.assign({}, res.locals, { 
-          msgText: i18next.t('auth:UserWithThisEmailAlreadyExists'), 
+          msgText: req.t('auth:UserWithThisEmailAlreadyExists'), 
           msgStyle: 'danger'
         }));
       } else {
@@ -37,7 +35,7 @@ router.post('/register', bodyParser.urlencoded({ extended: false }), hpp(), func
       req.session.visitor_id = visitor._id;
       res.locals.visitor = visitor;
       return res.render('pages/blank.ejs', Object.assign({}, res.locals, { 
-        msgText: i18next.t('auth:RegistrationDone'), 
+        msgText: req.t('auth:RegistrationDone'), 
         msgStyle: 'success'
       })); // Can use res.redirect
     }
