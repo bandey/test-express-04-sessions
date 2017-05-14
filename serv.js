@@ -24,6 +24,7 @@ var Visitor = require('./models/Visitor.js');
 
 // DB connect
 var mongoose = require('mongoose');
+mongoose.Promise = global.Promise; // to avoid warning about deprecation
 if (conf.get('dbDebug')) {
   mongoose.set('debug', true);
 }
