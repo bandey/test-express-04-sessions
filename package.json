@@ -19,7 +19,7 @@
   "main": "bin/www",
   "scripts": {
     "start": "node ./bin/www",
-    "debug": "DEBUG=bin:*,serv:* node ./bin/www",
+    "debug": "cross-env DEBUG=bin:*,serv:* node ./bin/www",
     "test": "tape tests/**/*.js | tap-notify | tap-dot"
   },
   "dependencies": {
@@ -45,6 +45,7 @@
     "serve-favicon": "^2.3.0"
   },
   "devDependencies": {
+    "cross-env": "^5.0.0",
     "sinon": "^1.17.6",
     "supertest": "^2.0.0",
     "tap-diff": "^0.1.1",
