@@ -14,7 +14,7 @@
     "session"
   ],
   "private": true,
-  "author": "Dmitrii Kondratev <origbandey@gmail.ru>",
+  "author": "Dmitrii Kondratev <origbandey@gmail.com>",
   "license": "MIT",
   "main": "bin/www",
   "scripts": {
