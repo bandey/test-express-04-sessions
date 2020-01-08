@@ -1,6 +1,6 @@
 {
   "name": "test_express_04",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Test ExpressJS + sessions + i18n + some security tools",
   "keywords": [
     "bcrypt",
